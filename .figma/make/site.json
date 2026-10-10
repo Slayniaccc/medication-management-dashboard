@@ -1,0 +1,10 @@
+{
+  "description": "Manage your medication with a user-friendly dashboard that logs doses, tracks adherence, provides reminders, and offers essential medicine information.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
