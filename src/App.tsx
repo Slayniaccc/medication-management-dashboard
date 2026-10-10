@@ -14,6 +14,7 @@ type Screen =
   | "help";
 type PatientTheme = "light" | "high-contrast" | "dark";
 type TextSize = "standard" | "large" | "extra-large";
+type MedicationColour = "coral" | "teal" | "ochre" | "indigo";
 
 type Medication = {
   id: number;
@@ -23,7 +24,7 @@ type Medication = {
   instructions: string;
   time: string;
   period: string;
-  color: string;
+  colour: MedicationColour;
   imageUrl?: string;
   reminderTimes?: string[];
   status: DoseStatus;
@@ -145,6 +146,14 @@ function Icon({ name, className = "h-5 w-5" }: IconProps) {
   );
 }
 
+// Tailwind only generates classes it can see written out in full.
+const medicationColourClass: Record<MedicationColour, string> = {
+  coral: "bg-med-coral",
+  teal: "bg-med-teal",
+  ochre: "bg-med-ochre",
+  indigo: "bg-med-indigo",
+};
+
 const initialMedications: Medication[] = [
   {
     id: 1,
@@ -154,7 +163,7 @@ const initialMedications: Medication[] = [
     instructions: "Take with a full glass of water",
     time: "8:00",
     period: "AM",
-    color: "bg-[#E27064]",
+    colour: "coral",
     status: "pending",
   },
   {
@@ -165,7 +174,7 @@ const initialMedications: Medication[] = [
     instructions: "Take with breakfast",
     time: "8:30",
     period: "AM",
-    color: "bg-[#41998E]",
+    colour: "teal",
     status: "pending",
   },
   {
@@ -176,7 +185,7 @@ const initialMedications: Medication[] = [
     instructions: "Take with food",
     time: "1:00",
     period: "PM",
-    color: "bg-[#936315]",
+    colour: "ochre",
     status: "pending",
   },
 ];
@@ -208,25 +217,25 @@ function ToggleRow({
   onChange: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-5 border-b border-[#DDE2DE] py-4 last:border-0">
+    <div className="flex items-center justify-between gap-5 border-b border-line py-4 last:border-0">
       <div>
-        <p className="font-bold text-[#172E35]">{label}</p>
-        <p className="mt-1 text-sm leading-5 text-[#526267]">{description}</p>
+        <p className="font-bold text-ink">{label}</p>
+        <p className="mt-1 text-sm leading-5 text-ink-muted">{description}</p>
       </div>
       <button
         aria-checked={checked}
         aria-label={`${label}: ${checked ? "on" : "off"}`}
-        className={`relative h-8 w-14 shrink-0 rounded-full border-2 transition focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#173B42] ${
+        className={`relative h-8 w-14 shrink-0 rounded-full border-2 transition focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${
           checked
-            ? "border-[#276D64] bg-[#276D64]"
-            : "border-[#71827D] bg-[#EEF1EE]"
+            ? "border-accent bg-accent"
+            : "border-line-strong bg-surface-sunken"
         }`}
         onClick={onChange}
         role="switch"
         type="button"
       >
         <span
-          className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition ${
+          className={`absolute top-1 h-5 w-5 rounded-full bg-surface shadow-sm transition ${
             checked ? "left-7" : "left-1"
           }`}
         />
@@ -277,13 +286,8 @@ export default function App() {
   const [soundAlerts, setSoundAlerts] = useState(true);
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.dataset.theme = patientTheme;
-    root.dataset.textSize = textSize;
-    root.dataset.colourSafe = String(colourSafe);
-    root.dataset.reducedMotion = String(reducedMotion);
-    root.dataset.simplifiedLayout = String(simplifiedLayout);
-  }, [patientTheme, textSize, colourSafe, reducedMotion, simplifiedLayout]);
+    document.documentElement.toggleAttribute("data-reduced-motion", reducedMotion);
+  }, [reducedMotion]);
 
   const prescriptionIsComplete =
     Boolean(newDosage) &&
@@ -355,7 +359,7 @@ export default function App() {
         instructions: "Follow the prescription instructions",
         time,
         period,
-        color: "bg-[#6D7DB3]",
+        colour: "indigo",
         imageUrl: medicineImage || undefined,
         reminderTimes,
         status: "pending",
@@ -403,15 +407,15 @@ export default function App() {
     description: string,
     content: ReactNode,
   ) => (
-    <div className="min-h-screen bg-[#F7F6F1] text-[#172E35]">
+    <div className="min-h-screen bg-page text-ink">
       <div className="mx-auto flex min-h-screen max-w-[1600px]">
-        <aside className="hidden w-72 shrink-0 flex-col overflow-y-auto bg-[#173B42] px-5 py-8 text-white lg:flex">
+        <aside className="hidden w-72 shrink-0 flex-col overflow-y-auto bg-inverse px-5 py-8 text-on-inverse lg:flex">
           <button
-            className="flex items-center gap-4 rounded-xl px-3 text-left focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#F8CF73]"
+            className="flex items-center gap-4 rounded-xl px-3 text-left focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse"
             onClick={() => goTo("dashboard")}
             type="button"
           >
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F8CF73] text-[#173B42]">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-highlight text-on-highlight">
               <Icon name="medication" className="h-7 w-7" />
             </span>
             <span className="text-2xl font-bold tracking-tight">AccessCare</span>
@@ -420,10 +424,10 @@ export default function App() {
             {navItems.map((item) => (
               <button
                 aria-current={isNavActive(item.target) ? "page" : undefined}
-                className={`flex min-h-14 w-full items-center gap-4 rounded-2xl px-4 text-left font-bold transition focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#F8CF73] ${
+                className={`flex min-h-14 w-full items-center gap-4 rounded-2xl px-4 text-left font-bold transition focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse ${
                   isNavActive(item.target)
-                    ? "bg-white text-[#173B42]"
-                    : "text-[#C9D7D8] hover:bg-white/10 hover:text-white"
+                    ? "bg-on-inverse text-inverse"
+                    : "text-on-inverse-muted hover:bg-on-inverse/10 hover:text-on-inverse"
                 }`}
                 key={item.label}
                 onClick={() => goTo(item.target)}
@@ -436,10 +440,10 @@ export default function App() {
           </nav>
           <div className="mt-auto space-y-2 pt-8">
             <button
-              className={`flex min-h-14 w-full items-center gap-4 rounded-2xl px-4 font-bold focus-visible:outline-3 focus-visible:outline-[#F8CF73] ${
+              className={`flex min-h-14 w-full items-center gap-4 rounded-2xl px-4 font-bold focus-visible:outline-3 focus-visible:outline-focus-inverse ${
                 screen === "help"
-                  ? "bg-white text-[#173B42]"
-                  : "text-[#C9D7D8] hover:bg-white/10 hover:text-white"
+                  ? "bg-on-inverse text-inverse"
+                  : "text-on-inverse-muted hover:bg-on-inverse/10 hover:text-on-inverse"
               }`}
               onClick={() => setScreen("help")}
               type="button"
@@ -448,10 +452,10 @@ export default function App() {
               Help & support
             </button>
             <button
-              className={`flex min-h-14 w-full items-center gap-4 rounded-2xl px-4 font-bold focus-visible:outline-3 focus-visible:outline-[#F8CF73] ${
+              className={`flex min-h-14 w-full items-center gap-4 rounded-2xl px-4 font-bold focus-visible:outline-3 focus-visible:outline-focus-inverse ${
                 screen === "settings"
-                  ? "bg-white text-[#173B42]"
-                  : "text-[#C9D7D8] hover:bg-white/10 hover:text-white"
+                  ? "bg-on-inverse text-inverse"
+                  : "text-on-inverse-muted hover:bg-on-inverse/10 hover:text-on-inverse"
               }`}
               onClick={() => setScreen("settings")}
               type="button"
@@ -460,37 +464,37 @@ export default function App() {
               Settings
             </button>
             <button
-              className="mt-5 flex w-full items-center gap-3 border-t border-white/15 px-3 pt-6 text-left focus-visible:outline-3 focus-visible:outline-[#F8CF73]"
+              className="mt-5 flex w-full items-center gap-3 border-t border-on-inverse/15 px-3 pt-6 text-left focus-visible:outline-3 focus-visible:outline-focus-inverse"
               onClick={() => setScreen("profile")}
               type="button"
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#CFE2DC] font-bold text-[#173B42]">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft font-bold text-ink">
                 {carerInitials}
               </span>
               <span>
                 <span className="block font-bold">{carerName}</span>
-                <span className="block text-sm text-[#C9D7D8]">Carer account</span>
+                <span className="block text-sm text-on-inverse-muted">Carer account</span>
               </span>
             </button>
           </div>
         </aside>
 
         <main className="min-w-0 flex-1">
-          <header className="border-b border-[#DDE2DE] bg-white lg:hidden">
+          <header className="border-b border-line bg-surface lg:hidden">
             <div className="flex min-h-20 items-center justify-between px-5">
               <button
-                className="flex items-center gap-3 rounded-xl focus-visible:outline-3 focus-visible:outline-[#173B42]"
+                className="flex items-center gap-3 rounded-xl focus-visible:outline-3 focus-visible:outline-focus"
                 onClick={() => goTo("dashboard")}
                 type="button"
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#173B42] text-[#F8CF73]">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-highlight">
                   <Icon name="medication" />
                 </span>
                 <span className="font-bold">AccessCare</span>
               </button>
               <button
                 aria-label="Open settings"
-                className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[#71827D] focus-visible:outline-3 focus-visible:outline-[#173B42]"
+                className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-line-strong focus-visible:outline-3 focus-visible:outline-focus"
                 onClick={() => setScreen("settings")}
                 type="button"
               >
@@ -499,15 +503,15 @@ export default function App() {
             </div>
             <nav
               aria-label="Mobile navigation"
-              className="flex gap-2 overflow-x-auto border-t border-[#DDE2DE] px-4 py-3"
+              className="flex gap-2 overflow-x-auto border-t border-line px-4 py-3"
             >
               {navItems.map((item) => (
                 <button
                   aria-current={isNavActive(item.target) ? "page" : undefined}
                   className={`flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-bold ${
                     isNavActive(item.target)
-                      ? "bg-[#173B42] text-white"
-                      : "bg-[#EEF1EE] text-[#173B42]"
+                      ? "bg-primary text-on-primary"
+                      : "bg-surface-sunken text-ink"
                   }`}
                   key={item.label}
                   onClick={() => goTo(item.target)}
@@ -521,11 +525,11 @@ export default function App() {
           </header>
 
           <div className="px-5 py-8 md:px-10 md:py-10 xl:px-14">
-            <p className="text-sm font-bold uppercase tracking-[0.1em] text-[#276D64]">
+            <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
               {eyebrow}
             </p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">{title}</h1>
-            <p className="mt-2 max-w-3xl text-lg leading-7 text-[#526267]">
+            <p className="mt-2 max-w-3xl text-lg leading-7 text-ink-muted">
               {description}
             </p>
             <div className="mt-8">{content}</div>
@@ -535,7 +539,7 @@ export default function App() {
       {toast && (
         <div
           aria-live="polite"
-          className="fixed bottom-5 left-1/2 z-50 flex min-h-12 -translate-x-1/2 items-center gap-2 rounded-xl bg-[#173B42] px-5 text-sm font-bold text-white shadow-xl"
+          className="fixed bottom-5 left-1/2 z-50 flex min-h-12 -translate-x-1/2 items-center gap-2 rounded-xl bg-inverse px-5 text-sm font-bold text-on-inverse shadow-xl"
           role="status"
         >
           <Icon name="check" className="h-4 w-4" />
@@ -553,7 +557,7 @@ export default function App() {
       <div>
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
           <button
-            className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#173B42] px-5 text-sm font-bold text-white hover:bg-[#24515A] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#E27064]"
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
             onClick={() => {
               setShowAddPrescription(true);
               setScreen("dashboard");
@@ -567,36 +571,36 @@ export default function App() {
         <div className="mt-5 grid gap-5 xl:grid-cols-2">
           {medications.map((medication) => (
             <article
-              className="rounded-2xl border border-[#DDE2DE] bg-white p-6"
+              className="rounded-2xl border border-line bg-surface p-6"
               key={medication.id}
             >
               <div className="flex items-start gap-4">
                 {medication.imageUrl ? (
                   <img
                     alt={`${medication.name} packaging`}
-                    className="h-16 w-16 rounded-xl border border-[#71827D] object-cover"
+                    className="h-16 w-16 rounded-xl border border-line-strong object-cover"
                     src={medication.imageUrl}
                   />
                 ) : (
                   <span
-                    className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-xl ${medication.color} text-white`}
+                    className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-xl ${medicationColourClass[medication.colour]} text-on-med`}
                   >
                     <Icon name="medication" className="h-7 w-7" />
                   </span>
                 )}
                 <div className="min-w-0">
                   <h2 className="text-xl font-bold">{medication.name}</h2>
-                  <p className="mt-1 font-bold text-[#3E555A]">{medication.dosage}</p>
-                  <p className="mt-1 text-[#526267]">{medication.purpose}</p>
+                  <p className="mt-1 font-bold text-ink-soft">{medication.dosage}</p>
+                  <p className="mt-1 text-ink-muted">{medication.purpose}</p>
                 </div>
               </div>
               <dl className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-[#F7F8F6] p-3">
-                  <dt className="text-sm font-bold text-[#526267]">Instructions</dt>
+                <div className="rounded-xl bg-surface-muted p-3">
+                  <dt className="text-sm font-bold text-ink-muted">Instructions</dt>
                   <dd className="mt-1">{medication.instructions}</dd>
                 </div>
-                <div className="rounded-xl bg-[#F7F8F6] p-3">
-                  <dt className="text-sm font-bold text-[#526267]">Reminder times</dt>
+                <div className="rounded-xl bg-surface-muted p-3">
+                  <dt className="text-sm font-bold text-ink-muted">Reminder times</dt>
                   <dd className="mt-1 font-bold">
                     {medication.reminderTimes?.join(", ") ??
                       `${medication.time} ${medication.period}`}
@@ -605,7 +609,7 @@ export default function App() {
               </dl>
               <div className="mt-5 flex gap-3">
                 <button
-                  className="min-h-11 flex-1 rounded-xl border-2 border-[#276D64] px-4 text-sm font-bold text-[#276D64] hover:bg-[#E8F3EF] focus-visible:outline-3 focus-visible:outline-[#173B42]"
+                  className="min-h-11 flex-1 rounded-xl border-2 border-accent px-4 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus"
                   onClick={() => {
                     setToast(`${medication.name} selected for editing.`);
                     window.setTimeout(() => setToast(""), 2800);
@@ -616,7 +620,7 @@ export default function App() {
                 </button>
                 <button
                   aria-label={`Remove ${medication.name}`}
-                  className="min-h-11 rounded-xl border-2 border-[#913C34] px-4 text-sm font-bold text-[#913C34] hover:bg-[#FAECE9] focus-visible:outline-3 focus-visible:outline-[#173B42]"
+                  className="min-h-11 rounded-xl border-2 border-danger px-4 text-sm font-bold text-danger hover:bg-danger-subtle focus-visible:outline-3 focus-visible:outline-focus"
                   onClick={() =>
                     setMedications((items) =>
                       items.filter((item) => item.id !== medication.id),
@@ -646,10 +650,10 @@ export default function App() {
           </h2>
           {medications.map((medication, index) => (
             <article
-              className="flex flex-col gap-5 rounded-2xl border border-[#DDE2DE] bg-white p-5 sm:flex-row sm:items-center"
+              className="flex flex-col gap-5 rounded-2xl border border-line bg-surface p-5 sm:flex-row sm:items-center"
               key={medication.id}
             >
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#DDEDE7] text-[#276D64]">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
                 <Icon name="bell" />
               </span>
               <div className="min-w-0 flex-1">
@@ -657,10 +661,10 @@ export default function App() {
                   {medication.time} {medication.period}
                 </p>
                 <p className="mt-1 font-bold">{medication.name}</p>
-                <p className="mt-1 text-sm text-[#526267]">{medication.dosage}</p>
+                <p className="mt-1 text-sm text-ink-muted">{medication.dosage}</p>
               </div>
               <button
-                className="min-h-12 rounded-xl border-2 border-[#276D64] px-4 text-sm font-bold text-[#276D64] hover:bg-[#E8F3EF] focus-visible:outline-3 focus-visible:outline-[#173B42]"
+                className="min-h-12 rounded-xl border-2 border-accent px-4 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus"
                 onClick={() => {
                   setToast(
                     `${medication.name} reminder moved ${index === 0 ? "to 8:10 AM" : "by 10 minutes"}.`,
@@ -674,7 +678,7 @@ export default function App() {
             </article>
           ))}
         </section>
-        <aside className="rounded-2xl border border-[#DDE2DE] bg-white p-6">
+        <aside className="rounded-2xl border border-line bg-surface p-6">
           <h2 className="text-xl font-bold">Reminder controls</h2>
           <div className="mt-4">
             <ToggleRow
@@ -702,14 +706,14 @@ export default function App() {
       "Review given and not-given doses with dates, times, and recorded reasons.",
       <section
         aria-labelledby="full-log-heading"
-        className="overflow-hidden rounded-2xl border border-[#DDE2DE] bg-white"
+        className="overflow-hidden rounded-2xl border border-line bg-surface"
       >
-        <div className="flex flex-col gap-3 border-b border-[#DDE2DE] p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-line p-5 sm:flex-row sm:items-center sm:justify-between">
           <h2 id="full-log-heading" className="text-xl font-bold">
             Recent dose activity
           </h2>
           <button
-            className="min-h-11 rounded-xl border-2 border-[#276D64] px-4 text-sm font-bold text-[#276D64] hover:bg-[#E8F3EF] focus-visible:outline-3 focus-visible:outline-[#173B42]"
+            className="min-h-11 rounded-xl border-2 border-accent px-4 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus"
             onClick={() => {
               setToast("Medicine log prepared for export.");
               window.setTimeout(() => setToast(""), 2800);
@@ -719,7 +723,7 @@ export default function App() {
             Export log
           </button>
         </div>
-        <ul className="divide-y divide-[#DDE2DE]">
+        <ul className="divide-y divide-line">
           {[
             ["Medicine 1", "10 mg", "Given", "Today, 8:04 AM", ""],
             ["Medicine 2", "500 mg", "Given", "Yesterday, 8:32 AM", ""],
@@ -736,8 +740,8 @@ export default function App() {
               <span
                 className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
                   status === "Given"
-                    ? "bg-[#E8F3EF] text-[#276D64]"
-                    : "bg-[#FAECE9] text-[#913C34]"
+                    ? "bg-given-subtle text-given"
+                    : "bg-not-given-subtle text-not-given"
                 }`}
               >
                 <Icon name={status === "Given" ? "check" : "close"} />
@@ -746,7 +750,7 @@ export default function App() {
                 <p className="font-bold">
                   {name} · {dose}
                 </p>
-                <p className="mt-1 text-sm text-[#526267]">
+                <p className="mt-1 text-sm text-ink-muted">
                   {date}
                   {note && ` · ${note}`}
                 </p>
@@ -754,8 +758,8 @@ export default function App() {
               <span
                 className={`rounded-full px-3 py-2 text-sm font-bold ${
                   status === "Given"
-                    ? "bg-[#E8F3EF] text-[#276D64]"
-                    : "bg-[#FAECE9] text-[#913C34]"
+                    ? "bg-given-subtle text-given"
+                    : "bg-not-given-subtle text-not-given"
                 }`}
               >
                 {status}
@@ -773,12 +777,12 @@ export default function App() {
       "Emergency contacts",
       "Use these contacts if a dose is missed, duplicated, incorrect, or causes concern.",
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border-2 border-[#B45248] bg-[#FAECE9] p-6 lg:col-span-2">
-          <p className="text-sm font-bold uppercase tracking-[0.08em] text-[#913C34]">
+        <section className="rounded-2xl border-2 border-danger bg-danger-subtle p-6 lg:col-span-2">
+          <p className="text-sm font-bold uppercase tracking-[0.08em] text-danger">
             Possible medication error
           </p>
           <h2 className="mt-2 text-2xl font-bold">Do not give another dose</h2>
-          <p className="mt-2 max-w-3xl leading-7 text-[#3E555A]">
+          <p className="mt-2 max-w-3xl leading-7 text-ink-soft">
             Contact a clinician for advice. If {patientName} is seriously unwell, call
             your local emergency services immediately.
           </p>
@@ -787,15 +791,15 @@ export default function App() {
           ["On-call doctor", "Incorrect, extra, or missed doses", "Available 24 hours"],
           ["Community nurse", "Medication guidance and care support", "7 AM–10 PM"],
         ].map(([name, purpose, availability]) => (
-          <article className="rounded-2xl border border-[#DDE2DE] bg-white p-6" key={name}>
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#DDEDE7] text-[#276D64]">
+          <article className="rounded-2xl border border-line bg-surface p-6" key={name}>
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent">
               <Icon name="phone" />
             </span>
             <h2 className="mt-4 text-xl font-bold">{name}</h2>
-            <p className="mt-2 text-[#526267]">{purpose}</p>
-            <p className="mt-3 text-sm font-bold text-[#276D64]">{availability}</p>
+            <p className="mt-2 text-ink-muted">{purpose}</p>
+            <p className="mt-3 text-sm font-bold text-accent">{availability}</p>
             <button
-              className="mt-5 min-h-12 w-full rounded-xl bg-[#173B42] px-5 font-bold text-white hover:bg-[#24515A] focus-visible:outline-3 focus-visible:outline-[#E27064]"
+              className="mt-5 min-h-12 w-full rounded-xl bg-primary px-5 font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-focus-on-primary"
               onClick={() => {
                 setToast(`Contacting ${name.toLowerCase()}.`);
                 window.setTimeout(() => setToast(""), 2800);
@@ -807,7 +811,7 @@ export default function App() {
           </article>
         ))}
         <button
-          className="min-h-14 rounded-xl border-2 border-[#913C34] bg-white px-5 font-bold text-[#913C34] hover:bg-[#FAECE9] focus-visible:outline-3 focus-visible:outline-[#173B42] lg:col-span-2"
+          className="min-h-14 rounded-xl border-2 border-danger bg-surface px-5 font-bold text-danger hover:bg-danger-subtle focus-visible:outline-3 focus-visible:outline-focus lg:col-span-2"
           onClick={() => {
             setToast("Medication incident form opened.");
             window.setTimeout(() => setToast(""), 2800);
@@ -826,7 +830,7 @@ export default function App() {
       "Settings",
       "Manage carer notifications and patient accessibility preferences.",
       <div className="grid gap-7 lg:grid-cols-2">
-        <section className="rounded-2xl border border-[#DDE2DE] bg-white p-6">
+        <section className="rounded-2xl border border-line bg-surface p-6">
           <h2 className="text-xl font-bold">Carer notifications</h2>
           <div className="mt-4">
             <ToggleRow
@@ -843,14 +847,14 @@ export default function App() {
             />
           </div>
         </section>
-        <section className="rounded-2xl border border-[#DDE2DE] bg-white p-6">
+        <section className="rounded-2xl border border-line bg-surface p-6">
           <h2 className="text-xl font-bold">Patient experience</h2>
-          <p className="mt-2 leading-6 text-[#526267]">
+          <p className="mt-2 leading-6 text-ink-muted">
             Configure theme, text size, read aloud, colour-safe labels, simplified layout,
             and motion preferences.
           </p>
           <button
-            className="mt-5 min-h-12 w-full rounded-xl bg-[#173B42] px-5 font-bold text-white focus-visible:outline-3 focus-visible:outline-[#E27064]"
+            className="mt-5 min-h-12 w-full rounded-xl bg-primary px-5 font-bold text-on-primary focus-visible:outline-3 focus-visible:outline-focus-on-primary"
             onClick={() => setScreen("setup")}
             type="button"
           >
@@ -874,7 +878,7 @@ export default function App() {
           ["Contact support", "Speak to the AccessCare support team."],
         ].map(([title, description], index) => (
           <button
-            className="rounded-2xl border border-[#DDE2DE] bg-white p-6 text-left hover:border-[#276D64] hover:bg-[#F7F8F6] focus-visible:outline-3 focus-visible:outline-[#173B42]"
+            className="rounded-2xl border border-line bg-surface p-6 text-left hover:border-accent hover:bg-surface-muted focus-visible:outline-3 focus-visible:outline-focus"
             key={title}
             onClick={() => {
               if (index === 0) {
@@ -890,9 +894,9 @@ export default function App() {
             }}
             type="button"
           >
-            <Icon name={index === 3 ? "phone" : "help"} className="h-7 w-7 text-[#276D64]" />
+            <Icon name={index === 3 ? "phone" : "help"} className="h-7 w-7 text-accent" />
             <span className="mt-4 block text-xl font-bold">{title}</span>
-            <span className="mt-2 block leading-6 text-[#526267]">{description}</span>
+            <span className="mt-2 block leading-6 text-ink-muted">{description}</span>
           </button>
         ))}
       </div>,
@@ -901,20 +905,20 @@ export default function App() {
 
   if (screen === "profile") {
     return (
-      <div className="min-h-screen bg-[#F7F6F1] text-[#172E35]">
-        <header className="border-b border-[#DDE2DE] bg-white">
+      <div className="min-h-screen bg-page text-ink">
+        <header className="border-b border-line bg-surface">
           <div className="mx-auto flex min-h-20 max-w-6xl items-center justify-between gap-4 px-5 md:px-8">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#173B42] text-[#F8CF73]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-highlight">
                 <Icon name="medication" />
               </div>
               <div>
                 <p className="font-bold">AccessCare</p>
-                <p className="text-sm text-[#526267]">Care profile</p>
+                <p className="text-sm text-ink-muted">Care profile</p>
               </div>
             </div>
             <button
-              className="min-h-11 rounded-xl bg-[#173B42] px-4 text-sm font-bold text-white hover:bg-[#24515A] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#E27064]"
+              className="min-h-11 rounded-xl bg-primary px-4 text-sm font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
               onClick={() => setScreen("dashboard")}
               type="button"
             >
@@ -926,18 +930,18 @@ export default function App() {
         <main className="mx-auto max-w-6xl px-5 py-8 md:px-8 md:py-10">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.1em] text-[#276D64]">
+              <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
                 My account
               </p>
               <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">
                 {carerName}
               </h1>
-              <p className="mt-2 text-lg text-[#526267]">
+              <p className="mt-2 text-lg text-ink-muted">
                 Manage your carer details and review the patient’s care information.
               </p>
             </div>
             <button
-              className="min-h-12 rounded-xl border-2 border-[#276D64] px-5 text-sm font-bold text-[#276D64] hover:bg-[#E8F3EF] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#173B42]"
+              className="min-h-12 rounded-xl border-2 border-accent px-5 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
               onClick={() => setScreen("setup")}
               type="button"
             >
@@ -949,34 +953,34 @@ export default function App() {
             <div className="space-y-7">
               <section
                 aria-labelledby="patient-profile-heading"
-                className="rounded-2xl border border-[#DDE2DE] bg-white p-6 md:p-7"
+                className="rounded-2xl border border-line bg-surface p-6 md:p-7"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#DDEDE7] text-2xl font-bold text-[#173B42]">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent-soft text-2xl font-bold text-ink">
                     {patientInitials}
                   </div>
                   <div>
                     <h2 id="patient-profile-heading" className="text-2xl font-bold">
                       Patient information
                     </h2>
-                    <p className="mt-1 text-[#526267]">Primary patient receiving care</p>
+                    <p className="mt-1 text-ink-muted">Primary patient receiving care</p>
                   </div>
                 </div>
                 <dl className="mt-7 grid gap-5 sm:grid-cols-2">
-                  <div className="rounded-xl bg-[#F7F8F6] p-4">
-                    <dt className="text-sm font-bold text-[#526267]">Full name</dt>
+                  <div className="rounded-xl bg-surface-muted p-4">
+                    <dt className="text-sm font-bold text-ink-muted">Full name</dt>
                     <dd className="mt-1 text-lg font-bold">{patientName}</dd>
                   </div>
-                  <div className="rounded-xl bg-[#F7F8F6] p-4">
-                    <dt className="text-sm font-bold text-[#526267]">Age</dt>
+                  <div className="rounded-xl bg-surface-muted p-4">
+                    <dt className="text-sm font-bold text-ink-muted">Age</dt>
                     <dd className="mt-1 text-lg font-bold">{patientAge}</dd>
                   </div>
-                  <div className="rounded-xl bg-[#F7F8F6] p-4">
-                    <dt className="text-sm font-bold text-[#526267]">Patient reference</dt>
+                  <div className="rounded-xl bg-surface-muted p-4">
+                    <dt className="text-sm font-bold text-ink-muted">Patient reference</dt>
                     <dd className="mt-1 text-lg font-bold">AC–0001</dd>
                   </div>
-                  <div className="rounded-xl bg-[#F7F8F6] p-4">
-                    <dt className="text-sm font-bold text-[#526267]">Medication support</dt>
+                  <div className="rounded-xl bg-surface-muted p-4">
+                    <dt className="text-sm font-bold text-ink-muted">Medication support</dt>
                     <dd className="mt-1 text-lg font-bold">
                       {allowMedicineChanges ? "Shared management" : "Carer managed"}
                     </dd>
@@ -986,7 +990,7 @@ export default function App() {
 
               <section
                 aria-labelledby="diagnosis-heading"
-                className="rounded-2xl border border-[#DDE2DE] bg-white p-6 md:p-7"
+                className="rounded-2xl border border-line bg-surface p-6 md:p-7"
               >
                 <h2 id="diagnosis-heading" className="text-2xl font-bold">
                   Diagnosis and care needs
@@ -994,13 +998,13 @@ export default function App() {
                 <div className="mt-5 space-y-5">
                   <div>
                     <h3 className="font-bold">Medical conditions and care notes</h3>
-                    <p className="mt-2 rounded-xl bg-[#F7F8F6] p-4 leading-7 text-[#3E555A]">
+                    <p className="mt-2 rounded-xl bg-surface-muted p-4 leading-7 text-ink-soft">
                       {medicalNeeds || "No medical conditions have been recorded."}
                     </p>
                   </div>
                   <div>
                     <h3 className="font-bold">Disabilities and accessibility needs</h3>
-                    <p className="mt-2 rounded-xl bg-[#F7F8F6] p-4 leading-7 text-[#3E555A]">
+                    <p className="mt-2 rounded-xl bg-surface-muted p-4 leading-7 text-ink-soft">
                       {disabilities || "No accessibility needs have been recorded."}
                     </p>
                   </div>
@@ -1009,7 +1013,7 @@ export default function App() {
 
               <section
                 aria-labelledby="profile-preferences-heading"
-                className="rounded-2xl border border-[#DDE2DE] bg-white p-6 md:p-7"
+                className="rounded-2xl border border-line bg-surface p-6 md:p-7"
               >
                 <h2 id="profile-preferences-heading" className="text-2xl font-bold">
                   Patient-view preferences
@@ -1024,10 +1028,10 @@ export default function App() {
                     `Reduced motion: ${reducedMotion ? "enabled" : "disabled"}`,
                   ].map((preference) => (
                     <li
-                      className="flex items-center gap-2 rounded-xl border border-[#71827D] px-4 py-3 font-bold"
+                      className="flex items-center gap-2 rounded-xl border border-line-strong px-4 py-3 font-bold"
                       key={preference}
                     >
-                      <Icon name="check" className="h-4 w-4 text-[#276D64]" />
+                      <Icon name="check" className="h-4 w-4 text-accent" />
                       {preference}
                     </li>
                   ))}
@@ -1038,21 +1042,21 @@ export default function App() {
             <aside className="space-y-7">
               <section
                 aria-labelledby="carer-profile-heading"
-                className="rounded-2xl border-2 border-[#276D64] bg-white p-6"
+                className="rounded-2xl border-2 border-accent bg-surface p-6"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#173B42] font-bold text-white">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary font-bold text-on-primary">
                     {carerInitials}
                   </div>
                   <div className="min-w-0 flex-1">
                     <h2 id="carer-profile-heading" className="text-xl font-bold">
                       {carerName}
                     </h2>
-                    <p className="text-sm text-[#526267]">Primary carer</p>
+                    <p className="text-sm text-ink-muted">Primary carer</p>
                   </div>
                   {!editingCarer && (
                     <button
-                      className="min-h-10 rounded-lg px-3 text-sm font-bold text-[#276D64] hover:bg-[#E8F3EF] focus-visible:outline-3 focus-visible:outline-[#173B42]"
+                      className="min-h-10 rounded-lg px-3 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus"
                       onClick={() => setEditingCarer(true)}
                       type="button"
                     >
@@ -1075,11 +1079,11 @@ export default function App() {
                       ["Availability", carerAvailability, setCarerAvailability, "text"],
                     ].map(([label, value, setter, type]) => (
                       <label className="block" key={label as string}>
-                        <span className="mb-1.5 block text-sm font-bold text-[#526267]">
+                        <span className="mb-1.5 block text-sm font-bold text-ink-muted">
                           {label as string}
                         </span>
                         <input
-                          className="min-h-12 w-full rounded-xl border-2 border-[#71827D] px-3 text-base outline-none focus:border-[#276D64] focus:ring-3 focus:ring-[#BCD8D1]"
+                          className="min-h-12 w-full rounded-xl border-2 border-line-strong px-3 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
                           onChange={(event) =>
                             (setter as (value: string) => void)(event.target.value)
                           }
@@ -1089,7 +1093,7 @@ export default function App() {
                       </label>
                     ))}
                     <button
-                      className="min-h-12 w-full rounded-xl bg-[#173B42] px-4 text-sm font-bold text-white hover:bg-[#24515A] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#E27064]"
+                      className="min-h-12 w-full rounded-xl bg-primary px-4 text-sm font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
                       onClick={() => setEditingCarer(false)}
                       type="button"
                     >
@@ -1099,23 +1103,23 @@ export default function App() {
                 ) : (
                   <dl className="mt-6 space-y-4">
                     <div>
-                      <dt className="text-sm font-bold text-[#526267]">Phone</dt>
+                      <dt className="text-sm font-bold text-ink-muted">Phone</dt>
                       <dd className="mt-1 font-bold">{carerPhone}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-bold text-[#526267]">Email</dt>
+                      <dt className="text-sm font-bold text-ink-muted">Email</dt>
                       <dd className="mt-1 break-words font-bold">{carerEmail}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-bold text-[#526267]">Relationship</dt>
+                      <dt className="text-sm font-bold text-ink-muted">Relationship</dt>
                       <dd className="mt-1 font-bold">{carerRelationship}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-bold text-[#526267]">Access level</dt>
+                      <dt className="text-sm font-bold text-ink-muted">Access level</dt>
                       <dd className="mt-1 font-bold">Medication and care management</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-bold text-[#526267]">Availability</dt>
+                      <dt className="text-sm font-bold text-ink-muted">Availability</dt>
                       <dd className="mt-1 font-bold">{carerAvailability}</dd>
                     </div>
                   </dl>
@@ -1126,8 +1130,8 @@ export default function App() {
                 aria-labelledby="consent-profile-heading"
                 className={`rounded-2xl border-2 p-6 ${
                   consentGiven
-                    ? "border-[#276D64] bg-[#E8F3EF]"
-                    : "border-[#B45248] bg-[#FAECE9]"
+                    ? "border-accent bg-accent-subtle"
+                    : "border-danger bg-danger-subtle"
                 }`}
               >
                 <h2 id="consent-profile-heading" className="text-xl font-bold">
@@ -1137,7 +1141,7 @@ export default function App() {
                   <Icon
                     name={consentGiven ? "check" : "close"}
                     className={`h-5 w-5 ${
-                      consentGiven ? "text-[#276D64]" : "text-[#913C34]"
+                      consentGiven ? "text-accent" : "text-danger"
                     }`}
                   />
                   {consentGiven ? "Consent recorded" : "Consent required"}
@@ -1145,21 +1149,21 @@ export default function App() {
                 {consentGiven ? (
                   <dl className="mt-4 space-y-3 text-sm">
                     <div>
-                      <dt className="font-bold text-[#526267]">How consent was given</dt>
+                      <dt className="font-bold text-ink-muted">How consent was given</dt>
                       <dd className="mt-1">{consentMethod}</dd>
                     </div>
                     <div>
-                      <dt className="font-bold text-[#526267]">Date recorded</dt>
+                      <dt className="font-bold text-ink-muted">Date recorded</dt>
                       <dd className="mt-1">{consentDate}</dd>
                     </div>
                   </dl>
                 ) : (
-                  <p className="mt-3 leading-6 text-[#913C34]">
+                  <p className="mt-3 leading-6 text-danger">
                     Complete the consent section before relying on this care setup.
                   </p>
                 )}
                 <button
-                  className="mt-5 min-h-12 w-full rounded-xl bg-[#173B42] px-4 text-sm font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#E27064]"
+                  className="mt-5 min-h-12 w-full rounded-xl bg-primary px-4 text-sm font-bold text-on-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
                   onClick={() => setScreen("setup")}
                   type="button"
                 >
@@ -1175,21 +1179,21 @@ export default function App() {
 
   if (screen === "setup") {
     return (
-      <div className="min-h-screen bg-[#F7F6F1] text-[#172E35]">
-        <header className="border-b border-[#DDE2DE] bg-white">
+      <div className="min-h-screen bg-page text-ink">
+        <header className="border-b border-line bg-surface">
           <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-4 px-5 md:px-8">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#173B42] text-[#F8CF73]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-highlight">
                 <Icon name="medication" />
               </div>
               <div>
                 <p className="font-bold">AccessCare</p>
-                <p className="text-sm text-[#526267]">Carer workspace</p>
+                <p className="text-sm text-ink-muted">Carer workspace</p>
               </div>
             </div>
             <div className="flex gap-2">
               <button
-                className="hidden min-h-11 items-center gap-2 rounded-xl border-2 border-[#276D64] px-4 text-sm font-bold text-[#276D64] hover:bg-[#E8F3EF] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#173B42] sm:flex"
+                className="hidden min-h-11 items-center gap-2 rounded-xl border-2 border-accent px-4 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus sm:flex"
                 onClick={() => setScreen("patient")}
                 type="button"
               >
@@ -1197,7 +1201,7 @@ export default function App() {
                 Preview patient view
               </button>
               <button
-                className="min-h-11 rounded-xl bg-[#173B42] px-4 text-sm font-bold text-white hover:bg-[#24515A] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#E27064]"
+                className="min-h-11 rounded-xl bg-primary px-4 text-sm font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
                 onClick={() => setScreen("dashboard")}
                 type="button"
               >
@@ -1209,13 +1213,13 @@ export default function App() {
 
         <main className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
           <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-[0.1em] text-[#276D64]">
+            <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
               Patient setup
             </p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">
               Adapt AccessCare to the patient
             </h1>
-            <p className="mt-3 text-lg leading-7 text-[#526267]">
+            <p className="mt-3 text-lg leading-7 text-ink-muted">
               Record the patient’s needs, choose accessibility support, and decide which
               medication actions they can manage independently.
             </p>
@@ -1225,14 +1229,14 @@ export default function App() {
             <div className="space-y-7">
               <section
                 aria-labelledby="patient-details-heading"
-                className="rounded-2xl border border-[#DDE2DE] bg-white p-6 md:p-7"
+                className="rounded-2xl border border-line bg-surface p-6 md:p-7"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#DDEDE7] text-[#276D64]">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent-soft text-accent">
                     <Icon name="home" />
                   </span>
                   <div>
-                    <p className="text-sm font-bold text-[#276D64]">Step 1</p>
+                    <p className="text-sm font-bold text-accent">Step 1</p>
                     <h2 id="patient-details-heading" className="text-xl font-bold">
                       Patient details and needs
                     </h2>
@@ -1243,7 +1247,7 @@ export default function App() {
                   <label className="block">
                     <span className="mb-2 block font-bold">Patient name</span>
                     <input
-                      className="min-h-12 w-full rounded-xl border-2 border-[#71827D] px-4 text-base outline-none focus:border-[#276D64] focus:ring-3 focus:ring-[#BCD8D1]"
+                      className="min-h-12 w-full rounded-xl border-2 border-line-strong px-4 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
                       onChange={(event) => setPatientName(event.target.value)}
                       type="text"
                       value={patientName}
@@ -1252,7 +1256,7 @@ export default function App() {
                   <label className="block">
                     <span className="mb-2 block font-bold">Patient age</span>
                     <input
-                      className="min-h-12 w-full rounded-xl border-2 border-[#71827D] px-4 text-base outline-none focus:border-[#276D64] focus:ring-3 focus:ring-[#BCD8D1]"
+                      className="min-h-12 w-full rounded-xl border-2 border-line-strong px-4 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
                       inputMode="numeric"
                       min="0"
                       onChange={(event) => setPatientAge(event.target.value)}
@@ -1264,23 +1268,23 @@ export default function App() {
                     <span className="mb-2 block font-bold">
                       Disabilities or accessibility needs
                     </span>
-                    <span className="mb-2 block text-sm text-[#526267]">
+                    <span className="mb-2 block text-sm text-ink-muted">
                       Describe vision, hearing, mobility, memory, learning, or communication
                       needs.
                     </span>
                     <textarea
-                      className="min-h-28 w-full rounded-xl border-2 border-[#71827D] p-4 text-base outline-none focus:border-[#276D64] focus:ring-3 focus:ring-[#BCD8D1]"
+                      className="min-h-28 w-full rounded-xl border-2 border-line-strong p-4 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
                       onChange={(event) => setDisabilities(event.target.value)}
                       value={disabilities}
                     />
                   </label>
                   <label className="block">
                     <span className="mb-2 block font-bold">Medical conditions or care notes</span>
-                    <span className="mb-2 block text-sm text-[#526267]">
+                    <span className="mb-2 block text-sm text-ink-muted">
                       Only include information the care team needs to provide safe support.
                     </span>
                     <textarea
-                      className="min-h-28 w-full rounded-xl border-2 border-[#71827D] p-4 text-base outline-none focus:border-[#276D64] focus:ring-3 focus:ring-[#BCD8D1]"
+                      className="min-h-28 w-full rounded-xl border-2 border-line-strong p-4 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
                       onChange={(event) => setMedicalNeeds(event.target.value)}
                       value={medicalNeeds}
                     />
@@ -1290,13 +1294,13 @@ export default function App() {
 
               <section
                 aria-labelledby="permissions-heading"
-                className="rounded-2xl border-2 border-[#276D64] bg-white p-6 md:p-7"
+                className="rounded-2xl border-2 border-accent bg-surface p-6 md:p-7"
               >
-                <p className="text-sm font-bold text-[#276D64]">Step 3</p>
+                <p className="text-sm font-bold text-accent">Step 3</p>
                 <h2 id="permissions-heading" className="mt-1 text-xl font-bold">
                   Patient access and permissions
                 </h2>
-                <p className="mt-2 text-base leading-6 text-[#526267]">
+                <p className="mt-2 text-base leading-6 text-ink-muted">
                   Choose what {patientName || "the patient"} can change. The carer can
                   change this at any time.
                 </p>
@@ -1311,8 +1315,8 @@ export default function App() {
                 <div
                   className={`mt-4 rounded-xl px-4 py-3 text-sm font-bold ${
                     allowMedicineChanges
-                      ? "bg-[#E8F3EF] text-[#276D64]"
-                      : "bg-[#FAECE9] text-[#913C34]"
+                      ? "bg-accent-subtle text-accent"
+                      : "bg-danger-subtle text-danger"
                   }`}
                 >
                   {allowMedicineChanges
@@ -1323,18 +1327,18 @@ export default function App() {
 
               <section
                 aria-labelledby="consent-heading"
-                className="rounded-2xl border-2 border-[#B45248] bg-white p-6 md:p-7"
+                className="rounded-2xl border-2 border-danger bg-surface p-6 md:p-7"
               >
-                <p className="text-sm font-bold text-[#913C34]">Step 4 · Required</p>
+                <p className="text-sm font-bold text-danger">Step 4 · Required</p>
                 <h2 id="consent-heading" className="mt-1 text-xl font-bold">
                   Patient consent
                 </h2>
-                <p className="mt-2 leading-6 text-[#526267]">
+                <p className="mt-2 leading-6 text-ink-muted">
                   Ask {patientName || "the patient"} to review this statement. Explain it
                   in an accessible format and give them an opportunity to ask questions.
                 </p>
 
-                <blockquote className="mt-5 rounded-xl border-l-4 border-[#276D64] bg-[#F7F8F6] p-4 leading-7 text-[#172E35]">
+                <blockquote className="mt-5 rounded-xl border-l-4 border-accent bg-surface-muted p-4 leading-7 text-ink">
                   “I, {patientName || "the patient"}, consent to {carerName} supporting
                   and managing my medicines, reminders, dose records, accessibility
                   preferences, and care contacts in AccessCare. I understand what access
@@ -1345,7 +1349,7 @@ export default function App() {
                   <label className="block">
                     <span className="mb-2 block font-bold">How consent was given</span>
                     <select
-                      className="min-h-12 w-full rounded-xl border-2 border-[#71827D] bg-white px-4 text-base outline-none focus:border-[#276D64] focus:ring-3 focus:ring-[#BCD8D1]"
+                      className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
                       onChange={(event) => setConsentMethod(event.target.value)}
                       value={consentMethod}
                     >
@@ -1358,7 +1362,7 @@ export default function App() {
                   <label className="block">
                     <span className="mb-2 block font-bold">Date consent recorded</span>
                     <input
-                      className="min-h-12 w-full rounded-xl border-2 border-[#71827D] bg-white px-4 text-base outline-none focus:border-[#276D64] focus:ring-3 focus:ring-[#BCD8D1]"
+                      className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
                       onChange={(event) => setConsentDate(event.target.value)}
                       type="date"
                       value={consentDate}
@@ -1369,13 +1373,13 @@ export default function App() {
                 <label
                   className={`mt-5 flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 ${
                     consentGiven
-                      ? "border-[#276D64] bg-[#E8F3EF]"
-                      : "border-[#71827D] bg-white"
+                      ? "border-accent bg-accent-subtle"
+                      : "border-line-strong bg-surface"
                   }`}
                 >
                   <input
                     checked={consentGiven}
-                    className="mt-0.5 h-6 w-6 shrink-0 accent-[#276D64]"
+                    className="mt-0.5 h-6 w-6 shrink-0 accent-accent"
                     onChange={(event) => setConsentGiven(event.target.checked)}
                     type="checkbox"
                   />
@@ -1384,7 +1388,7 @@ export default function App() {
                       I confirm that {patientName || "the patient"} gave informed consent
                       for this care arrangement.
                     </span>
-                    <span className="mt-1 block text-sm leading-5 text-[#526267]">
+                    <span className="mt-1 block text-sm leading-5 text-ink-muted">
                       Consent was freely given after the access and responsibilities were
                       explained in a way the patient could understand.
                     </span>
@@ -1395,14 +1399,14 @@ export default function App() {
 
             <section
               aria-labelledby="accessibility-heading"
-              className="rounded-2xl border border-[#DDE2DE] bg-white p-6 md:p-7"
+              className="rounded-2xl border border-line bg-surface p-6 md:p-7"
             >
               <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#DDEDE7] text-[#276D64]">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent-soft text-accent">
                   <Icon name="settings" />
                 </span>
                 <div>
-                  <p className="text-sm font-bold text-[#276D64]">Step 2</p>
+                  <p className="text-sm font-bold text-accent">Step 2</p>
                   <h2 id="accessibility-heading" className="text-xl font-bold">
                     Accessibility preferences
                   </h2>
@@ -1411,7 +1415,7 @@ export default function App() {
 
               <fieldset className="mt-7">
                 <legend className="font-bold">Theme and contrast</legend>
-                <p className="mt-1 text-sm text-[#526267]">
+                <p className="mt-1 text-sm text-ink-muted">
                   Choose the most comfortable background and contrast level.
                 </p>
                 <div className="mt-3 grid grid-cols-3 gap-2">
@@ -1424,10 +1428,10 @@ export default function App() {
                   ).map(([value, label]) => (
                     <button
                       aria-pressed={patientTheme === value}
-                      className={`min-h-14 rounded-xl border-2 px-2 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#173B42] ${
+                      className={`min-h-14 rounded-xl border-2 px-2 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                         patientTheme === value
-                          ? "border-[#276D64] bg-[#E8F3EF] text-[#173B42]"
-                          : "border-[#71827D] bg-white text-[#526267]"
+                          ? "border-accent bg-accent-subtle text-ink"
+                          : "border-line-strong bg-surface text-ink-muted"
                       }`}
                       key={value}
                       onClick={() => setPatientTheme(value)}
@@ -1441,7 +1445,7 @@ export default function App() {
 
               <fieldset className="mt-7">
                 <legend className="font-bold">Text size</legend>
-                <p className="mt-1 text-sm text-[#526267]">
+                <p className="mt-1 text-sm text-ink-muted">
                   The patient can still zoom using their browser or device.
                 </p>
                 <div className="mt-3 grid grid-cols-3 gap-2">
@@ -1454,10 +1458,10 @@ export default function App() {
                   ).map(([value, label]) => (
                     <button
                       aria-pressed={textSize === value}
-                      className={`min-h-14 rounded-xl border-2 px-2 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#173B42] ${
+                      className={`min-h-14 rounded-xl border-2 px-2 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                         textSize === value
-                          ? "border-[#276D64] bg-[#E8F3EF] text-[#173B42]"
-                          : "border-[#71827D] bg-white text-[#526267]"
+                          ? "border-accent bg-accent-subtle text-ink"
+                          : "border-line-strong bg-surface text-ink-muted"
                       } ${value === "standard" ? "text-sm" : value === "large" ? "text-base" : "text-lg"}`}
                       key={value}
                       onClick={() => setTextSize(value)}
@@ -1498,16 +1502,16 @@ export default function App() {
             </section>
           </div>
 
-          <div className="mt-8 flex flex-col justify-end gap-3 rounded-2xl bg-[#173B42] p-5 sm:flex-row">
+          <div className="mt-8 flex flex-col justify-end gap-3 rounded-2xl bg-inverse p-5 sm:flex-row">
             <button
-              className="min-h-12 rounded-xl border-2 border-white px-5 text-sm font-bold text-white hover:bg-white/10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#F8CF73]"
+              className="min-h-12 rounded-xl border-2 border-on-inverse px-5 text-sm font-bold text-on-inverse hover:bg-on-inverse/10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse"
               onClick={() => setScreen("patient")}
               type="button"
             >
               Preview patient view
             </button>
             <button
-              className="min-h-12 rounded-xl bg-[#F8CF73] px-6 text-sm font-bold text-[#173B42] enabled:hover:bg-white disabled:cursor-not-allowed disabled:bg-[#C9D0CE] disabled:text-[#526267] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="min-h-12 rounded-xl bg-highlight px-6 text-sm font-bold text-on-highlight enabled:hover:bg-on-inverse disabled:cursor-not-allowed disabled:bg-disabled disabled:text-ink-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-on-inverse"
               disabled={!consentGiven || !consentDate}
               onClick={() => {
                 setToast("Patient setup saved.");
@@ -1525,59 +1529,32 @@ export default function App() {
   }
 
   if (screen === "patient") {
-    const isDark = patientTheme === "dark";
-    const isHighContrast = patientTheme === "high-contrast";
-    const pageClass = isDark
-      ? "bg-[#102C33] text-white"
-      : isHighContrast
-        ? "bg-white text-[#0B1E23]"
-        : "bg-[#F7F6F1] text-[#172E35]";
-    const cardClass = isDark
-      ? "border-[#AFC1C3] bg-[#173B42]"
-      : isHighContrast
-        ? "border-[#172E35] bg-white"
-        : "border-[#DDE2DE] bg-white";
-    const secondaryClass = isDark ? "text-[#D5E0DE]" : "text-[#3E555A]";
-    const sizeClass =
-      textSize === "extra-large"
-        ? "[&_p]:!text-xl [&_p]:!leading-relaxed [&_span]:!text-xl [&_button]:!text-xl [&_h1]:!text-5xl md:[&_h1]:!text-6xl [&_h2]:!text-4xl"
-        : textSize === "large"
-          ? "[&_p]:!text-lg [&_p]:!leading-relaxed [&_span]:!text-lg [&_button]:!text-lg"
-          : "text-base";
     const patientDoseWasTaken =
       medications.find((medication) => medication.id === 2)?.status === "taken";
 
     return (
       <div
-        className={`min-h-screen ${pageClass} ${sizeClass} ${
-          reducedMotion ? "[&_*]:transition-none" : ""
-        }`}
+        className="min-h-screen bg-page text-base text-ink"
+        data-colour-safe={colourSafe ? "" : undefined}
+        data-simplified-layout={simplifiedLayout ? "" : undefined}
+        data-text-size={textSize}
+        data-theme={patientTheme}
       >
-        <header
-          className={`border-b-2 ${isDark ? "border-[#AFC1C3] bg-[#173B42]" : "border-[#172E35] bg-white"}`}
-        >
+        <header className="border-b-2 border-line-strong bg-surface">
           <div className="mx-auto flex min-h-20 max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-3 md:px-8">
             <div className="flex items-center gap-3">
-              <div
-                className={`flex h-11 w-11 items-center justify-center rounded-xl ${
-                  isDark ? "bg-[#F8CF73] text-[#173B42]" : "bg-[#173B42] text-[#F8CF73]"
-                }`}
-              >
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-on-primary">
                 <Icon name="medication" />
               </div>
               <div>
                 <p className="font-bold">AccessCare</p>
-                <p className={`text-sm ${secondaryClass}`}>Patient view</p>
+                <p className="text-sm text-ink-soft">Patient view</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
               {readAloud && (
                 <button
-                  className={`min-h-12 rounded-xl border-2 px-4 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 ${
-                    isDark
-                      ? "border-white text-white focus-visible:outline-[#F8CF73]"
-                      : "border-[#276D64] text-[#276D64] focus-visible:outline-[#173B42]"
-                  }`}
+                  className="min-h-12 rounded-xl border-2 border-accent px-4 font-bold text-accent focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   onClick={readPatientPage}
                   type="button"
                 >
@@ -1585,7 +1562,7 @@ export default function App() {
                 </button>
               )}
               <button
-                className="min-h-12 rounded-xl bg-[#F8CF73] px-4 font-bold text-[#173B42] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#E27064]"
+                className="min-h-12 rounded-xl bg-highlight px-4 font-bold text-on-highlight focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 onClick={() => setScreen("dashboard")}
                 type="button"
               >
@@ -1596,58 +1573,40 @@ export default function App() {
         </header>
 
         <main className="mx-auto max-w-5xl px-5 py-8 md:px-8 md:py-12">
-          <p className={`font-bold ${isDark ? "text-[#F8CF73]" : "text-[#276D64]"}`}>
-            Today’s medicines
-          </p>
+          <p className="font-bold text-accent">Today’s medicines</p>
           <h1 className="mt-2 text-4xl font-bold tracking-tight md:text-5xl">
             Hello, {patientName.split(" ")[0] || "there"}
           </h1>
-          <p className={`mt-3 leading-7 ${secondaryClass}`}>
+          <p className="mt-3 leading-relaxed text-ink-soft">
             Here is what you need to do next. Ask your carer if you are unsure.
           </p>
 
           <section
             aria-labelledby="patient-next-dose"
-            className={`mt-8 rounded-2xl border-2 p-6 md:p-8 ${cardClass}`}
+            className="mt-8 rounded-2xl border-2 border-line bg-surface p-6 md:p-8"
           >
-            <p
-              className={`font-bold uppercase tracking-[0.08em] ${
-                isDark ? "text-[#F8CF73]" : "text-[#276D64]"
-              }`}
-            >
+            <p className="font-bold uppercase tracking-[0.08em] text-accent">
               Next medicine · 8:30 AM
             </p>
             <h2 id="patient-next-dose" className="mt-3 text-3xl font-bold">
               Medicine 2
             </h2>
-            <p className={`mt-2 text-xl font-bold ${secondaryClass}`}>
-              500 mg · 1 tablet
-            </p>
-            <p className={`mt-4 leading-7 ${secondaryClass}`}>
+            <p className="mt-2 text-xl font-bold text-ink-soft">500 mg · 1 tablet</p>
+            <p className="mt-4 leading-relaxed text-ink-soft">
               Take with breakfast and a full glass of water.
             </p>
             {patientDoseWasTaken ? (
               <div
-                className={`mt-6 flex min-h-16 items-center justify-center gap-3 rounded-xl border-2 px-5 text-lg font-bold ${
-                  isDark
-                    ? "border-white bg-white text-[#173B42]"
-                    : "border-[#276D64] bg-[#E8F3EF] text-[#276D64]"
-                }`}
+                className="mt-6 flex min-h-16 items-center justify-center gap-3 rounded-xl border-2 border-given bg-given-subtle px-5 text-lg font-bold text-given"
                 role="status"
               >
                 <Icon name="check" />
                 Recorded as taken
               </div>
             ) : !allowMedicineChanges ? (
-              <div
-                className={`mt-6 rounded-xl border-2 p-5 ${
-                  isDark
-                    ? "border-[#F8CF73] bg-[#102C33] text-white"
-                    : "border-[#71827D] bg-[#EEF1EE] text-[#172E35]"
-                }`}
-              >
+              <div className="mt-6 rounded-xl border-2 border-line-strong bg-surface-sunken p-5 text-ink">
                 <p className="font-bold">Dose reporting is managed by your carer</p>
-                <p className={`mt-2 text-base leading-6 ${secondaryClass}`}>
+                <p className="mt-2 text-base leading-relaxed text-ink-soft">
                   You can view this medicine, but only {carerName} can record whether it
                   was taken or not taken.
                 </p>
@@ -1655,22 +1614,14 @@ export default function App() {
             ) : (
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <button
-                  className={`min-h-16 rounded-xl px-6 text-lg font-bold focus-visible:outline-4 focus-visible:outline-offset-2 ${
-                    isDark
-                      ? "bg-[#F8CF73] text-[#173B42] focus-visible:outline-white"
-                      : "bg-[#173B42] text-white focus-visible:outline-[#E27064]"
-                  }`}
+                  className="min-h-16 rounded-xl bg-primary px-6 text-lg font-bold text-on-primary focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
                   onClick={() => markTaken(2)}
                   type="button"
                 >
                   I have taken this medicine
                 </button>
                 <button
-                  className={`min-h-16 rounded-xl border-2 px-6 text-lg font-bold focus-visible:outline-4 focus-visible:outline-offset-2 ${
-                    isDark
-                      ? "border-white text-white focus-visible:outline-[#F8CF73]"
-                      : "border-[#913C34] text-[#913C34] focus-visible:outline-[#173B42]"
-                  }`}
+                  className="min-h-16 rounded-xl border-2 border-not-given px-6 text-lg font-bold text-not-given focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   onClick={() => {
                     setScreen("dashboard");
                     setReasonFor(2);
@@ -1683,37 +1634,35 @@ export default function App() {
             )}
           </section>
 
-          {!simplifiedLayout && (
-            <section
-              className={`mt-6 rounded-2xl border-2 p-6 ${cardClass}`}
-              aria-labelledby="patient-summary"
-            >
-              <h2 id="patient-summary" className="text-2xl font-bold">
-                Your medicine summary
-              </h2>
-              <p className={`mt-2 ${secondaryClass}`}>
-                You have {medications.length} medicines scheduled today and your next
-                reminder is at 8:30 AM.
-              </p>
-            </section>
-          )}
+          <section
+            className="mt-6 rounded-2xl border-2 border-line bg-surface p-6 simplified:hidden"
+            aria-labelledby="patient-summary"
+          >
+            <h2 id="patient-summary" className="text-2xl font-bold">
+              Your medicine summary
+            </h2>
+            <p className="mt-2 text-ink-soft">
+              You have {medications.length} medicines scheduled today and your next
+              reminder is at 8:30 AM.
+            </p>
+          </section>
 
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <section
               aria-labelledby="patient-permissions"
-              className={`rounded-2xl border-2 p-6 ${cardClass}`}
+              className="rounded-2xl border-2 border-line bg-surface p-6"
             >
               <h2 id="patient-permissions" className="text-2xl font-bold">
                 My medicines
               </h2>
-              <p className={`mt-2 leading-6 ${secondaryClass}`}>
+              <p className="mt-2 leading-relaxed text-ink-soft">
                 {allowMedicineChanges
                   ? "You can record doses, add a new medicine, or ask your carer for help."
                   : "Your carer manages prescription changes and records doses. You can view your medicine schedule."}
               </p>
               {allowMedicineChanges ? (
                 <button
-                  className="mt-5 min-h-14 w-full rounded-xl bg-[#173B42] px-5 font-bold text-white focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-[#E27064]"
+                  className="mt-5 min-h-14 w-full rounded-xl bg-primary px-5 font-bold text-on-primary focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
                   onClick={() => {
                     setShowAddPrescription(true);
                     setScreen("dashboard");
@@ -1723,13 +1672,7 @@ export default function App() {
                   Add a medicine
                 </button>
               ) : (
-                <div
-                  className={`mt-5 rounded-xl px-4 py-3 font-bold ${
-                    isDark
-                      ? "bg-white text-[#173B42]"
-                      : "bg-[#EEF1EE] text-[#3E555A]"
-                  }`}
-                >
+                <div className="mt-5 rounded-xl bg-surface-sunken px-4 py-3 font-bold text-ink-soft">
                   Medicine changes are managed by your carer.
                 </div>
               )}
@@ -1737,16 +1680,16 @@ export default function App() {
 
             <section
               aria-labelledby="patient-help"
-              className={`rounded-2xl border-2 p-6 ${cardClass}`}
+              className="rounded-2xl border-2 border-line bg-surface p-6"
             >
               <h2 id="patient-help" className="text-2xl font-bold">
                 Need help?
               </h2>
-              <p className={`mt-2 leading-6 ${secondaryClass}`}>
+              <p className="mt-2 leading-relaxed text-ink-soft">
                 Tell your carer if you feel unwell or think you took the wrong dose.
               </p>
               <button
-                className="mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#913C34] px-5 font-bold text-white focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-[#F8CF73]"
+                className="mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-xl bg-danger px-5 font-bold text-on-danger focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 onClick={() => {
                   setScreen("dashboard");
                   window.setTimeout(() => goTo("emergency"), 0);
@@ -1761,20 +1704,12 @@ export default function App() {
 
           <div className="mt-8 flex flex-wrap gap-2">
             {colourSafe && (
-              <span
-                className={`rounded-full border-2 px-3 py-2 text-sm font-bold ${
-                  isDark ? "border-white" : "border-[#276D64] text-[#276D64]"
-                }`}
-              >
+              <span className="rounded-full border-2 border-accent px-3 py-2 text-sm font-bold text-accent">
                 Icons and labels enabled
               </span>
             )}
             {reducedMotion && (
-              <span
-                className={`rounded-full border-2 px-3 py-2 text-sm font-bold ${
-                  isDark ? "border-white" : "border-[#276D64] text-[#276D64]"
-                }`}
-              >
+              <span className="rounded-full border-2 border-accent px-3 py-2 text-sm font-bold text-accent">
                 Reduced motion
               </span>
             )}
@@ -1785,11 +1720,11 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F6F1] text-[#172E35]">
+    <div className="min-h-screen bg-page text-ink">
       <div className="mx-auto flex min-h-screen max-w-[1600px]">
-        <aside className="hidden w-72 shrink-0 flex-col overflow-y-auto bg-[#173B42] px-5 py-8 text-white lg:flex">
+        <aside className="hidden w-72 shrink-0 flex-col overflow-y-auto bg-inverse px-5 py-8 text-on-inverse lg:flex">
           <div className="flex items-center gap-4 px-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F8CF73] text-[#173B42]">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-highlight text-on-highlight">
               <Icon name="medication" className="h-7 w-7" />
             </div>
             <span className="text-2xl font-bold tracking-tight">AccessCare</span>
@@ -1800,10 +1735,10 @@ export default function App() {
               <button
                 aria-current={isNavActive(item.target) ? "page" : undefined}
                 key={item.label}
-                className={`flex min-h-14 w-full items-center gap-4 rounded-2xl px-4 text-left font-bold transition focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#F8CF73] ${
+                className={`flex min-h-14 w-full items-center gap-4 rounded-2xl px-4 text-left font-bold transition focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse ${
                   isNavActive(item.target)
-                    ? "bg-white text-[#173B42]"
-                    : "text-[#C9D7D8] hover:bg-white/10 hover:text-white"
+                    ? "bg-on-inverse text-inverse"
+                    : "text-on-inverse-muted hover:bg-on-inverse/10 hover:text-on-inverse"
                 }`}
                 onClick={() => goTo(item.target)}
                 type="button"
@@ -1816,7 +1751,7 @@ export default function App() {
 
           <div className="mt-auto space-y-2">
             <button
-              className="flex min-h-14 w-full items-center gap-4 rounded-2xl px-4 font-bold text-[#C9D7D8] hover:bg-white/10 hover:text-white focus-visible:outline-3 focus-visible:outline-[#F8CF73]"
+              className="flex min-h-14 w-full items-center gap-4 rounded-2xl px-4 font-bold text-on-inverse-muted hover:bg-on-inverse/10 hover:text-on-inverse focus-visible:outline-3 focus-visible:outline-focus-inverse"
               onClick={() => setScreen("help")}
               type="button"
             >
@@ -1824,7 +1759,7 @@ export default function App() {
               Help & support
             </button>
             <button
-              className="flex min-h-14 w-full items-center gap-4 rounded-2xl px-4 font-bold text-[#C9D7D8] hover:bg-white/10 hover:text-white focus-visible:outline-3 focus-visible:outline-[#F8CF73]"
+              className="flex min-h-14 w-full items-center gap-4 rounded-2xl px-4 font-bold text-on-inverse-muted hover:bg-on-inverse/10 hover:text-on-inverse focus-visible:outline-3 focus-visible:outline-focus-inverse"
               onClick={() => setScreen("settings")}
               type="button"
             >
@@ -1832,39 +1767,39 @@ export default function App() {
               Settings
             </button>
             <button
-              className="mt-5 flex w-full items-center gap-3 border-t border-white/15 px-3 pt-6 text-left focus-visible:outline-3 focus-visible:outline-[#F8CF73]"
+              className="mt-5 flex w-full items-center gap-3 border-t border-on-inverse/15 px-3 pt-6 text-left focus-visible:outline-3 focus-visible:outline-focus-inverse"
               onClick={() => setScreen("profile")}
               type="button"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#CFE2DC] font-bold text-[#173B42]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft font-bold text-ink">
                 {carerInitials}
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold">{carerName}</p>
-                <p className="truncate text-sm text-[#C9D7D8]">Carer account</p>
+                <p className="truncate text-sm text-on-inverse-muted">Carer account</p>
               </div>
             </button>
           </div>
         </aside>
 
         <main className="min-w-0 flex-1">
-          <header className="flex min-h-20 items-center justify-between border-b border-[#DDE2DE] bg-[#F7F6F1]/90 px-5 backdrop-blur md:px-10">
+          <header className="flex min-h-20 items-center justify-between border-b border-line bg-page/90 px-5 backdrop-blur md:px-10">
             <div className="flex items-center gap-3 lg:hidden">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#173B42] text-[#F8CF73]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-highlight">
                 <Icon name="medication" />
               </div>
               <span className="hidden font-bold sm:block">AccessCare</span>
             </div>
-            <p className="hidden text-sm font-semibold text-[#526267] lg:block">
+            <p className="hidden text-sm font-semibold text-ink-muted lg:block">
               Monday, June 16
             </p>
             <div className="ml-auto flex items-center gap-3">
               <button
                 aria-label={reminderOn ? "Turn reminders off" : "Turn reminders on"}
-                className={`flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-bold transition focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#173B42] ${
+                className={`flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-bold transition focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                   reminderOn
-                    ? "border-[#BCD8D1] bg-[#E8F3EF] text-[#276D64]"
-                    : "border-[#71827D] bg-white text-[#526267]"
+                    ? "border-accent-line bg-accent-subtle text-accent"
+                    : "border-line-strong bg-surface text-ink-muted"
                 }`}
                 onClick={() => setReminderOn((value) => !value)}
                 type="button"
@@ -1876,7 +1811,7 @@ export default function App() {
               </button>
               <button
                 aria-label="View notifications"
-                className="relative flex h-11 w-11 items-center justify-center rounded-full border border-[#71827D] bg-white hover:bg-[#EEF1EE] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#173B42]"
+                className="relative flex h-11 w-11 items-center justify-center rounded-full border border-line-strong bg-surface hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 onClick={() => {
                   setToast("No new urgent notifications.");
                   window.setTimeout(() => setToast(""), 2800);
@@ -1884,18 +1819,18 @@ export default function App() {
                 type="button"
               >
                 <Icon name="bell" />
-                <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#E27064] ring-2 ring-white" />
+                <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-attention ring-2 ring-surface" />
               </button>
             </div>
           </header>
 
           <nav
             aria-label="Mobile navigation"
-            className="flex gap-2 overflow-x-auto border-b border-[#DDE2DE] bg-white px-4 py-3 lg:hidden"
+            className="flex gap-2 overflow-x-auto border-b border-line bg-surface px-4 py-3 lg:hidden"
           >
             {navItems.map((item) => (
               <button
-                className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-[#F0F3F0] px-4 text-sm font-bold text-[#173B42] focus-visible:outline-3 focus-visible:outline-[#173B42]"
+                className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-surface-sunken px-4 text-sm font-bold text-ink focus-visible:outline-3 focus-visible:outline-focus"
                 key={item.label}
                 onClick={() => goTo(item.target)}
                 type="button"
@@ -1905,7 +1840,7 @@ export default function App() {
               </button>
             ))}
             <button
-              className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-[#F0F3F0] px-4 text-sm font-bold text-[#173B42] focus-visible:outline-3 focus-visible:outline-[#173B42]"
+              className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-surface-sunken px-4 text-sm font-bold text-ink focus-visible:outline-3 focus-visible:outline-focus"
               onClick={() => setScreen("settings")}
               type="button"
             >
@@ -1920,18 +1855,18 @@ export default function App() {
               id="dashboard"
             >
               <div>
-                <p className="mb-2 text-sm font-bold uppercase tracking-[0.12em] text-[#276D64]">
+                <p className="mb-2 text-sm font-bold uppercase tracking-[0.12em] text-accent">
                   {patientName}’s care plan · fictional medicines
                 </p>
-                <h1 className="text-3xl font-bold tracking-tight text-[#173B42] md:text-4xl">
+                <h1 className="text-3xl font-bold tracking-tight text-ink md:text-4xl">
                   Good morning, {carerName.split(" ")[0] || "Carer"}
                 </h1>
-                <p className="mt-2 text-base text-[#526267]">
+                <p className="mt-2 text-base text-ink-muted">
                   {patientName} has {medications.length} prescriptions scheduled today.
                 </p>
               </div>
               <button
-                className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#173B42] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#24515A] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#E27064]"
+                className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-on-primary shadow-sm transition hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
                 onClick={() => setShowAddPrescription(true)}
                 type="button"
               >
@@ -1942,28 +1877,28 @@ export default function App() {
 
             <section
               aria-labelledby="next-dose-heading"
-              className="mt-8 overflow-hidden rounded-2xl bg-[#DDEDE7]"
+              className="mt-8 overflow-hidden rounded-2xl bg-accent-soft"
               id="next-reminder"
             >
               <div className="flex flex-col justify-between gap-5 p-6 md:flex-row md:items-center md:p-7">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-[#276D64] shadow-sm">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface text-accent shadow-sm">
                     <Icon name="bell" className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold uppercase tracking-[0.1em] text-[#276D64]">
+                    <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
                       Next reminder · in 20 minutes
                     </p>
                     <h2 id="next-dose-heading" className="mt-1 text-xl font-bold">
                       Medicine 2, 500 mg
                     </h2>
-                    <p className="mt-1 text-base font-medium text-[#3E555A]">
+                    <p className="mt-1 text-base font-medium text-ink-soft">
                       8:30 AM · Take 1 tablet with breakfast
                     </p>
                   </div>
                 </div>
                 <button
-                  className="min-h-11 rounded-xl border-2 border-[#276D64] bg-transparent px-5 text-sm font-bold text-[#276D64] hover:bg-white/60 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#173B42]"
+                  className="min-h-11 rounded-xl border-2 border-accent bg-transparent px-5 text-sm font-bold text-accent hover:bg-surface/60 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   onClick={() => {
                     setToast("Reminder moved to 8:40 AM.");
                     window.setTimeout(() => setToast(""), 2800);
@@ -1986,12 +1921,12 @@ export default function App() {
                     <h2 id="schedule-heading" className="text-2xl font-bold">
                       Today’s prescriptions
                     </h2>
-                    <p className="mt-1 text-base text-[#526267]">
+                    <p className="mt-1 text-base text-ink-muted">
                       Record whether each dose was “Given” or “Not given.”
                     </p>
                   </div>
                   <button
-                    className="hidden min-h-11 items-center gap-1 rounded-lg px-3 text-sm font-bold text-[#276D64] hover:bg-[#E8F3EF] focus-visible:outline-3 focus-visible:outline-[#173B42] sm:flex"
+                    className="hidden min-h-11 items-center gap-1 rounded-lg px-3 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus sm:flex"
                     onClick={() => setShowAddPrescription(true)}
                     type="button"
                   >
@@ -2004,12 +1939,12 @@ export default function App() {
                   {medications.map((medication) => (
                     <article
                       key={medication.id}
-                      className={`rounded-2xl border bg-white p-5 shadow-[0_1px_2px_rgba(23,59,66,0.04)] transition md:p-6 ${
+                      className={`rounded-2xl border bg-surface p-5 shadow-xs transition md:p-6 ${
                         medication.status === "taken"
-                          ? "border-[#B7D7CF]"
+                          ? "border-given"
                           : medication.status === "missed"
-                            ? "border-[#E5C4BF]"
-                            : "border-[#E1E4E1]"
+                            ? "border-not-given"
+                            : "border-line"
                       }`}
                     >
                       <div className="flex flex-col gap-5 md:flex-row md:items-center">
@@ -2017,13 +1952,13 @@ export default function App() {
                           {medication.imageUrl ? (
                             <img
                               alt={`${medication.name} packaging`}
-                              className="mt-1 h-12 w-12 shrink-0 rounded-xl border border-[#71827D] object-cover"
+                              className="mt-1 h-12 w-12 shrink-0 rounded-xl border border-line-strong object-cover"
                               src={medication.imageUrl}
                             />
                           ) : (
                             <div
                               aria-hidden="true"
-                              className={`mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${medication.color} text-white`}
+                              className={`mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${medicationColourClass[medication.colour]} text-on-med`}
                             >
                               <Icon name="medication" className="h-6 w-6" />
                             </div>
@@ -2031,19 +1966,19 @@ export default function App() {
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <h3 className="text-lg font-bold">{medication.name}</h3>
-                              <span className="rounded-full bg-[#EEF1EE] px-2.5 py-1 text-sm font-semibold text-[#526267]">
+                              <span className="rounded-full bg-surface-sunken px-2.5 py-1 text-sm font-semibold text-ink-muted">
                                 {medication.purpose}
                               </span>
                             </div>
-                            <p className="mt-1 font-bold text-[#3E555A]">
+                            <p className="mt-1 font-bold text-ink-soft">
                               {medication.dosage}
                             </p>
-                            <p className="mt-1 text-base text-[#526267]">
+                            <p className="mt-1 text-base text-ink-muted">
                               {medication.instructions}
                             </p>
                             {medication.reminderTimes &&
                               medication.reminderTimes.length > 1 && (
-                                <p className="mt-2 text-sm font-bold text-[#276D64]">
+                                <p className="mt-2 text-sm font-bold text-accent">
                                   {medication.reminderTimes.length} daily reminders:{" "}
                                   {medication.reminderTimes.join(", ")}
                                 </p>
@@ -2051,10 +1986,10 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4 border-t border-[#ECEEEC] pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
+                        <div className="flex items-center gap-4 border-t border-line pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
                           <div className="w-16 text-center">
                             <p className="text-xl font-bold">{medication.time}</p>
-                            <p className="text-sm font-bold text-[#526267]">
+                            <p className="text-sm font-bold text-ink-muted">
                               {medication.period}
                             </p>
                           </div>
@@ -2062,18 +1997,18 @@ export default function App() {
                             <div className="flex flex-1 gap-2 md:flex-none">
                               <button
                                 aria-label={`Mark ${medication.name} as given to ${patientName}`}
-                                className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#173B42] px-4 text-sm font-bold text-white hover:bg-[#24515A] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#E27064] md:flex-none"
+                                className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary md:flex-none"
                                 onClick={() => markTaken(medication.id)}
                                 type="button"
                               >
-                                <span className="flex h-5 w-5 items-center justify-center rounded-md border-2 border-white">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-md border-2 border-on-primary">
                                   <Icon name="check" className="h-3 w-3" />
                                 </span>
                                 Given
                               </button>
                               <button
                                 aria-label={`Mark ${medication.name} as not given to ${patientName}`}
-                                className="min-h-12 rounded-xl border border-[#71827D] px-3 text-sm font-bold text-[#526267] hover:bg-[#F1F3F1] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#173B42]"
+                                className="min-h-12 rounded-xl border border-line-strong px-3 text-sm font-bold text-ink-muted hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                                 onClick={() => setReasonFor(medication.id)}
                                 type="button"
                               >
@@ -2084,8 +2019,8 @@ export default function App() {
                             <div
                               className={`flex min-h-12 min-w-36 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold ${
                                 medication.status === "taken"
-                                  ? "bg-[#E8F3EF] text-[#276D64]"
-                                  : "bg-[#FAECE9] text-[#A14940]"
+                                  ? "bg-given-subtle text-given"
+                                  : "bg-not-given-subtle text-not-given"
                               }`}
                             >
                               <Icon
@@ -2105,7 +2040,7 @@ export default function App() {
               <aside className="hidden">
                 <section
                   aria-labelledby="progress-heading"
-                  className="rounded-2xl border border-[#E1E4E1] bg-white p-6"
+                  className="rounded-2xl border border-line bg-surface p-6"
                 >
                   <div className="flex items-center justify-between">
                     <h2 id="progress-heading" className="text-lg font-bold">
@@ -2113,7 +2048,7 @@ export default function App() {
                     </h2>
                     <button
                       aria-label="More adherence options"
-                      className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[#F0F2EF] focus-visible:outline-3 focus-visible:outline-[#173B42]"
+                      className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-focus"
                       type="button"
                     >
                       <Icon name="more" />
@@ -2122,9 +2057,9 @@ export default function App() {
                   <div className="mt-5 flex items-end justify-between">
                     <div>
                       <p className="text-4xl font-bold tracking-tight">92%</p>
-                      <p className="mt-1 text-base text-[#526267]">Doses given on time</p>
+                      <p className="mt-1 text-base text-ink-muted">Doses given on time</p>
                     </div>
-                    <span className="rounded-full bg-[#E8F3EF] px-3 py-1.5 text-sm font-bold text-[#276D64]">
+                    <span className="rounded-full bg-accent-subtle px-3 py-1.5 text-sm font-bold text-accent">
                       +4% this week
                     </span>
                   </div>
@@ -2142,8 +2077,8 @@ export default function App() {
                         <div
                           className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full ${
                             complete
-                              ? "bg-[#41998E] text-white"
-                              : "bg-[#FAECE9] text-[#A14940]"
+                              ? "bg-given text-surface"
+                              : "bg-not-given-subtle text-not-given"
                           }`}
                         >
                           <Icon
@@ -2151,7 +2086,7 @@ export default function App() {
                             className="h-4 w-4"
                           />
                         </div>
-                        <p className="mt-2 text-sm font-bold text-[#526267]">{day}</p>
+                        <p className="mt-2 text-sm font-bold text-ink-muted">{day}</p>
                       </div>
                     ))}
                   </div>
@@ -2159,7 +2094,7 @@ export default function App() {
 
                 <section
                   aria-labelledby="log-heading"
-                  className="rounded-2xl border border-[#E1E4E1] bg-white p-6"
+                  className="rounded-2xl border border-line bg-surface p-6"
                   id="medicine-log"
                 >
                   <div className="flex items-center justify-between">
@@ -2167,66 +2102,66 @@ export default function App() {
                       Medicine log
                     </h2>
                     <button
-                      className="min-h-10 rounded-lg px-2 text-sm font-bold text-[#276D64] hover:bg-[#E8F3EF] focus-visible:outline-3 focus-visible:outline-[#173B42]"
+                      className="min-h-10 rounded-lg px-2 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus"
                       type="button"
                     >
                       View all
                     </button>
                   </div>
-                  <ul className="mt-3 divide-y divide-[#ECEEEC]">
+                  <ul className="mt-3 divide-y divide-line">
                     <li className="flex items-center gap-3 py-4">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8F3EF] text-[#276D64]">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-given-subtle text-given">
                         <Icon name="check" className="h-4 w-4" />
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-base font-bold">
                           Medicine 1 · 10 mg
                         </p>
-                        <p className="text-sm text-[#526267]">Yesterday, 8:04 AM</p>
+                        <p className="text-sm text-ink-muted">Yesterday, 8:04 AM</p>
                       </div>
-                      <span className="text-sm font-bold text-[#276D64]">Given</span>
+                      <span className="text-sm font-bold text-given">Given</span>
                     </li>
                     <li className="flex items-center gap-3 py-4">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8F3EF] text-[#276D64]">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-given-subtle text-given">
                         <Icon name="check" className="h-4 w-4" />
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-base font-bold">
                           Medicine 2 · 500 mg
                         </p>
-                        <p className="text-sm text-[#526267]">Yesterday, 8:32 AM</p>
+                        <p className="text-sm text-ink-muted">Yesterday, 8:32 AM</p>
                       </div>
-                      <span className="text-sm font-bold text-[#276D64]">Given</span>
+                      <span className="text-sm font-bold text-given">Given</span>
                     </li>
                     <li className="flex items-center gap-3 py-4">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FAECE9] text-[#A14940]">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-not-given-subtle text-not-given">
                         <Icon name="close" className="h-4 w-4" />
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-base font-bold">
                           Medicine 3 · 1,000 IU
                         </p>
-                        <p className="text-sm text-[#526267]">
+                        <p className="text-sm text-ink-muted">
                           Sun, 1:00 PM · {patientName} refused
                         </p>
                       </div>
-                      <span className="text-sm font-bold text-[#913C34]">Not given</span>
+                      <span className="text-sm font-bold text-not-given">Not given</span>
                     </li>
                   </ul>
                 </section>
 
                 <section
                   aria-labelledby="emergency-heading"
-                  className="scroll-mt-6 overflow-hidden rounded-2xl border-2 border-[#B45248] bg-white"
+                  className="scroll-mt-6 overflow-hidden rounded-2xl border-2 border-danger bg-surface"
                   id="emergency-contacts"
                 >
-                  <div className="bg-[#FAECE9] p-6">
+                  <div className="bg-danger-subtle p-6">
                     <div className="flex items-start gap-3">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#913C34] text-white">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger text-on-danger">
                         <Icon name="phone" className="h-5 w-5" />
                       </span>
                       <div>
-                        <p className="text-sm font-bold uppercase tracking-[0.08em] text-[#913C34]">
+                        <p className="text-sm font-bold uppercase tracking-[0.08em] text-danger">
                           Medication error support
                         </p>
                         <h2 id="emergency-heading" className="mt-1 text-xl font-bold">
@@ -2234,24 +2169,24 @@ export default function App() {
                         </h2>
                       </div>
                     </div>
-                    <p className="mt-4 text-base leading-6 text-[#3E555A]">
+                    <p className="mt-4 text-base leading-6 text-ink-soft">
                       Do not give another dose until you have received clinical advice.
                       Contact {patientName}’s doctor or nurse now.
                     </p>
-                    <p className="mt-3 rounded-lg bg-white px-3 py-2 text-sm font-bold text-[#913C34]">
+                    <p className="mt-3 rounded-lg bg-surface px-3 py-2 text-sm font-bold text-danger">
                       If {patientName} is seriously unwell, call your local emergency
                       services immediately.
                     </p>
                   </div>
 
-                  <div className="divide-y divide-[#DDE2DE] p-2">
+                  <div className="divide-y divide-line p-2">
                     <div className="p-3">
                       <p className="text-base font-bold">On-call doctor</p>
-                      <p className="mt-1 text-sm text-[#526267]">
+                      <p className="mt-1 text-sm text-ink-muted">
                         For incorrect, extra, or missed doses · Available 24 hours
                       </p>
                       <button
-                        className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#173B42] px-4 text-sm font-bold text-white hover:bg-[#24515A] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#E27064]"
+                        className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
                         onClick={() => {
                           setToast("Contacting the on-call doctor.");
                           window.setTimeout(() => setToast(""), 2800);
@@ -2265,11 +2200,11 @@ export default function App() {
 
                     <div className="p-3">
                       <p className="text-base font-bold">Community nurse</p>
-                      <p className="mt-1 text-sm text-[#526267]">
+                      <p className="mt-1 text-sm text-ink-muted">
                         For medication guidance and care support · 7 AM–10 PM
                       </p>
                       <button
-                        className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-[#276D64] bg-white px-4 text-sm font-bold text-[#276D64] hover:bg-[#E8F3EF] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#173B42]"
+                        className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-accent bg-surface px-4 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                         onClick={() => {
                           setToast("Contacting the community nurse.");
                           window.setTimeout(() => setToast(""), 2800);
@@ -2292,25 +2227,25 @@ export default function App() {
         <div
           aria-labelledby="prescription-title"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#102C33]/55 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/55 p-4"
           role="dialog"
         >
-          <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl md:p-7">
+          <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-surface p-6 shadow-2xl md:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-bold uppercase tracking-[0.1em] text-[#276D64]">
+                <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
                   Manage prescriptions
                 </p>
                 <h2 id="prescription-title" className="mt-1 text-2xl font-bold">
                   Add a new prescription
                 </h2>
-                <p className="mt-2 text-base text-[#526267]">
+                <p className="mt-2 text-base text-ink-muted">
                   The prescription will be added as Medicine {medications.length + 1}.
                 </p>
               </div>
               <button
                 aria-label="Close add prescription dialog"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-[#F0F2EF] focus-visible:outline-3 focus-visible:outline-[#173B42]"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-focus"
                 onClick={() => setShowAddPrescription(false)}
                 type="button"
               >
@@ -2321,9 +2256,9 @@ export default function App() {
             <div className="mt-6 space-y-5">
               <label className="block">
                 <span className="mb-2 block text-base font-bold">
-                  Medicine photo <span className="font-normal text-[#526267]">(optional)</span>
+                  Medicine photo <span className="font-normal text-ink-muted">(optional)</span>
                 </span>
-                <span className="flex min-h-28 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-[#71827D] bg-[#F7F8F6] p-4 text-center transition hover:bg-[#EEF1EE] focus-within:border-[#276D64] focus-within:ring-3 focus-within:ring-[#BCD8D1]">
+                <span className="flex min-h-28 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-line-strong bg-surface-muted p-4 text-center transition hover:bg-surface-sunken focus-within:border-accent focus-within:ring-3 focus-within:ring-accent-line">
                   <input
                     accept="image/*"
                     className="sr-only"
@@ -2337,23 +2272,23 @@ export default function App() {
                     <span className="flex items-center gap-4">
                       <img
                         alt="Selected medicine preview"
-                        className="h-20 w-20 rounded-xl border border-[#71827D] object-cover"
+                        className="h-20 w-20 rounded-xl border border-line-strong object-cover"
                         src={medicineImage}
                       />
                       <span className="text-left">
-                        <span className="block font-bold text-[#173B42]">Photo added</span>
-                        <span className="mt-1 block text-sm text-[#526267]">
+                        <span className="block font-bold text-ink">Photo added</span>
+                        <span className="mt-1 block text-sm text-ink-muted">
                           Select to choose a different photo
                         </span>
                       </span>
                     </span>
                   ) : (
                     <span>
-                      <Icon name="image" className="mx-auto h-7 w-7 text-[#276D64]" />
-                      <span className="mt-2 block font-bold text-[#173B42]">
+                      <Icon name="image" className="mx-auto h-7 w-7 text-accent" />
+                      <span className="mt-2 block font-bold text-ink">
                         Add a photo of the medicine
                       </span>
-                      <span className="mt-1 block text-sm text-[#526267]">
+                      <span className="mt-1 block text-sm text-ink-muted">
                         Use a clear photo of the packaging or label
                       </span>
                     </span>
@@ -2365,7 +2300,7 @@ export default function App() {
                 <label className="block">
                   <span className="mb-2 block text-base font-bold">Dosage</span>
                   <input
-                    className="min-h-12 w-full rounded-xl border-2 border-[#71827D] bg-white px-4 text-base text-[#172E35] outline-none placeholder:text-[#6A787C] focus:border-[#276D64] focus:ring-3 focus:ring-[#BCD8D1]"
+                    className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base text-ink outline-none placeholder:text-ink-muted focus:border-accent focus:ring-3 focus:ring-accent-line"
                     onChange={(event) => setNewDosage(event.target.value)}
                     placeholder="For example: 20 mg"
                     type="text"
@@ -2376,7 +2311,7 @@ export default function App() {
                 <label className="block">
                   <span className="mb-2 block text-base font-bold">Quantity</span>
                   <input
-                    className="min-h-12 w-full rounded-xl border-2 border-[#71827D] bg-white px-4 text-base text-[#172E35] outline-none placeholder:text-[#6A787C] focus:border-[#276D64] focus:ring-3 focus:ring-[#BCD8D1]"
+                    className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base text-ink outline-none placeholder:text-ink-muted focus:border-accent focus:ring-3 focus:ring-accent-line"
                     onChange={(event) => setNewQuantity(event.target.value)}
                     placeholder="For example: 1 tablet"
                     type="text"
@@ -2387,7 +2322,7 @@ export default function App() {
 
               <fieldset>
                 <legend className="mb-2 text-base font-bold">Reminder times</legend>
-                <p className="mb-3 text-sm text-[#526267]">
+                <p className="mb-3 text-sm text-ink-muted">
                   Add every time this medicine should be given.
                 </p>
                 <div className="space-y-3">
@@ -2397,7 +2332,7 @@ export default function App() {
                         Reminder time {index + 1}
                       </label>
                       <select
-                        className="min-h-12 min-w-0 flex-1 rounded-xl border-2 border-[#71827D] bg-white px-4 text-base text-[#172E35] outline-none focus:border-[#276D64] focus:ring-3 focus:ring-[#BCD8D1]"
+                        className="min-h-12 min-w-0 flex-1 rounded-xl border-2 border-line-strong bg-surface px-4 text-base text-ink outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
                         id={`reminder-${index}`}
                         onChange={(event) =>
                           setNewTimes((times) =>
@@ -2417,7 +2352,7 @@ export default function App() {
                       {newTimes.length > 1 && (
                         <button
                           aria-label={`Remove reminder time ${index + 1}`}
-                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-[#71827D] text-[#913C34] hover:bg-[#FAECE9] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#173B42]"
+                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-line-strong text-danger hover:bg-danger-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                           onClick={() =>
                             setNewTimes((times) =>
                               times.filter((_, timeIndex) => timeIndex !== index),
@@ -2432,7 +2367,7 @@ export default function App() {
                   ))}
                 </div>
                 <button
-                  className="mt-3 flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-bold text-[#276D64] hover:bg-[#E8F3EF] focus-visible:outline-3 focus-visible:outline-[#173B42]"
+                  className="mt-3 flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus"
                   onClick={() => setNewTimes((times) => [...times, ""])}
                   type="button"
                 >
@@ -2444,14 +2379,14 @@ export default function App() {
 
             <div className="mt-7 flex gap-3">
               <button
-                className="min-h-12 flex-1 rounded-xl border border-[#71827D] px-4 text-sm font-bold hover:bg-[#F1F3F1] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#173B42]"
+                className="min-h-12 flex-1 rounded-xl border border-line-strong px-4 text-sm font-bold hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 onClick={() => setShowAddPrescription(false)}
                 type="button"
               >
                 Cancel
               </button>
               <button
-                className="min-h-12 flex-1 rounded-xl bg-[#173B42] px-4 text-sm font-bold text-white enabled:hover:bg-[#24515A] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#E27064]"
+                className="min-h-12 flex-1 rounded-xl bg-primary px-4 text-sm font-bold text-on-primary enabled:hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
                 disabled={!prescriptionIsComplete}
                 onClick={savePrescription}
                 type="button"
@@ -2467,24 +2402,24 @@ export default function App() {
         <div
           aria-labelledby="reason-title"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#102C33]/55 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/55 p-4"
           role="dialog"
         >
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl md:p-7">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl md:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-bold text-[#A14940]">Dose not given</p>
+                <p className="text-sm font-bold text-not-given">Dose not given</p>
                 <h2 id="reason-title" className="mt-1 text-2xl font-bold">
                   Why was this dose not given?
                 </h2>
-                <p className="mt-2 text-base leading-6 text-[#526267]">
+                <p className="mt-2 text-base leading-6 text-ink-muted">
                   Record what happened when you offered this medicine to {patientName}.
                   This information will be added to the patient’s care log.
                 </p>
               </div>
               <button
                 aria-label="Close"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-[#F0F2EF] focus-visible:outline-3 focus-visible:outline-[#173B42]"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-focus"
                 onClick={() => setReasonFor(null)}
                 type="button"
               >
@@ -2507,14 +2442,14 @@ export default function App() {
                 <label
                   className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 text-sm font-semibold transition ${
                     reason === option
-                      ? "border-[#276D64] bg-[#E8F3EF] text-[#173B42]"
-                      : "border-[#71827D] hover:bg-[#F7F8F6]"
+                      ? "border-accent bg-accent-subtle text-ink"
+                      : "border-line-strong hover:bg-surface-muted"
                   }`}
                   key={option}
                 >
                   <input
                     checked={reason === option}
-                    className="h-5 w-5 accent-[#276D64]"
+                    className="h-5 w-5 accent-accent"
                     name="missed-reason"
                     onChange={() => setReason(option)}
                     type="radio"
@@ -2526,14 +2461,14 @@ export default function App() {
             </fieldset>
             <div className="mt-7 flex gap-3">
               <button
-                className="min-h-12 flex-1 rounded-xl border border-[#71827D] px-4 text-sm font-bold hover:bg-[#F1F3F1] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#173B42]"
+                className="min-h-12 flex-1 rounded-xl border border-line-strong px-4 text-sm font-bold hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 onClick={() => setReasonFor(null)}
                 type="button"
               >
                 Cancel
               </button>
               <button
-                className="min-h-12 flex-1 rounded-xl bg-[#173B42] px-4 text-sm font-bold text-white enabled:hover:bg-[#24515A] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#E27064]"
+                className="min-h-12 flex-1 rounded-xl bg-primary px-4 text-sm font-bold text-on-primary enabled:hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
                 disabled={!reason}
                 onClick={saveMissed}
                 type="button"
@@ -2548,7 +2483,7 @@ export default function App() {
       {toast && (
         <div
           aria-live="polite"
-          className="fixed bottom-5 left-1/2 z-50 flex min-h-12 -translate-x-1/2 items-center gap-2 rounded-xl bg-[#173B42] px-5 text-sm font-bold text-white shadow-xl"
+          className="fixed bottom-5 left-1/2 z-50 flex min-h-12 -translate-x-1/2 items-center gap-2 rounded-xl bg-inverse px-5 text-sm font-bold text-on-inverse shadow-xl"
           role="status"
         >
           <Icon name="check" className="h-4 w-4" />

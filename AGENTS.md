@@ -181,13 +181,14 @@ Honest inventory, so nobody mistakes a placeholder for a bug or a stub for a fea
 
 Keep this section and Known issues accurate as work lands. They are the only parts of this file that change during normal work.
 
-- The five accessibility settings are mirrored onto the DOM as data attributes, but nothing reads them yet, so the first invariant is only half met
+- The five accessibility settings drive the rendered output. Theme, text size, colour-safe and simplified layout are attributes on the patient view root, read by the semantic tokens and the `simplified` variant in `src/index.css`. Reduced motion is an attribute on `<html>`
+- Every screen uses the semantic colour tokens. The high-contrast, dark and colour-safe token values have not been measured for contrast or checked in a browser yet
+- The codebase has never been run through `pnpm format`. Running it restyles every file, so it has been left alone until that is done as its own change
 - Medication data, patient profile, carer details and consent record are seeded in memory and reset on refresh
 - No persistence layer yet
 - No tests
 - Dose state still lives on the medication object, contradicting the data model above
 - Schedule times are still stored as display strings (`time: "8:00"`, `period: "AM"`) and parsed with `split(" ")`
-- Medication colour is still a Tailwind class in the seed data
 - `.figma/make/` is leftover harness tooling from the export and is unused
 
 ## Known issues

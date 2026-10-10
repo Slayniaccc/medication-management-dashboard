@@ -115,3 +115,45 @@ Format for each entry: date, the decision as a statement, the alternative that w
 **Alternative.** Match the internal name.
 
 **Why.** Internal naming and the public DOM contract do not have to agree, and `patient` is an implementation detail leaking outward. The scoping decision above already makes it unambiguous which subtree it applies to.
+
+---
+
+## 2026-10-10: Colour tokens are named by role, and near-duplicate values are collapsed
+
+**Decision.** `src/index.css` defines one vocabulary in `@theme`, named for what a colour does: `page`, `surface`, `ink`, `line`, `primary`, `inverse`, `accent`, `danger`, `given`, `not-given`, `focus`, and their variants. Every screen uses these and no screen carries a hex value. Where the export had several values a shade apart doing the same job (four near-identical light greys, three divider greys, two reds for not-given text), they became one token.
+
+**Alternative.** One token per existing hex value, which changes nothing visually but only renames the problem: a theme would have to override sixty values that mean a dozen things.
+
+**Why.** A theme can only restyle what has a role. The collapsed values differ by amounts nobody would notice, and where two candidates existed the one with more contrast was kept. `given` and `not-given` are separate tokens from `accent` and `danger` even though they share values in the light theme, because a dose status is a different thing from a button and colour-safe mode needs to move one without the other.
+
+**Accepted limitation.** Each theme block sets its tokens outright rather than deriving one token from another. A token written as `var(--other)` in `@theme` resolves at `:root` and would ignore an override further down the tree.
+
+---
+
+## 2026-10-10: Colour-safe mode moves dose status off the red/green axis
+
+**Decision.** With `data-colour-safe` present, `given` and `not-given` resolve to blue and orange instead of green and red, in every theme.
+
+**Alternative.** Leave the setting as it was: a flag that only added a badge reading "Icons and labels enabled", on a view that already shows an icon and a label for every status whether the setting is on or not.
+
+**Why.** A setting has to change what is rendered or it is decoration. Icons and labels are not optional extras to switch on, they are the baseline, so the only thing left for this setting to do honestly is fix the palette. Red and green are the pair most often confused; blue and orange stay distinct under the common forms of colour vision deficiency.
+
+---
+
+## 2026-10-10: Text size scales Tailwind's type scale, not individual elements
+
+**Decision.** `data-text-size` overrides the `--text-*` variables on the patient view root: 1.125 times for large, 1.25 times for extra large. Fixed line heights in the patient view became relative ones so they follow.
+
+**Alternative.** The export's approach, a string of `[&_p]:!text-lg` selectors forcing sizes onto every paragraph, span and button with `!important`.
+
+**Why.** The old selectors flattened the hierarchy, since small print and body text were forced to the same size, and they silently missed any element type nobody listed. Scaling the tokens keeps every size in proportion and covers anything added later. The multipliers match the sizes body text was already being forced to.
+
+---
+
+## 2026-10-10: Simplified layout is read from the attribute by a CSS variant
+
+**Decision.** A `simplified:` variant matches inside `[data-simplified-layout]`. Secondary sections are always rendered and carry `simplified:hidden`.
+
+**Alternative.** Keep the conditional render driven by component state, with the attribute alongside it as a second, unread source.
+
+**Why.** One source for the setting, and it is the same one the other three patient settings use. `display: none` removes the section from the accessibility tree as well, so a screen reader user gets the same simplified page.

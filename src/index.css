@@ -3,6 +3,200 @@
 
 @theme {
   --font-sans: "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
+
+  /* Semantic colour tokens. These are the light theme and the carer screens. */
+  --color-page: #f7f6f1;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f7f8f6;
+  --color-surface-sunken: #eef1ee;
+  --color-overlay: #102c33;
+
+  --color-ink: #172e35;
+  --color-ink-soft: #3e555a;
+  --color-ink-muted: #526267;
+
+  --color-line: #dde2de;
+  --color-line-strong: #71827d;
+
+  --color-primary: #173b42;
+  --color-primary-hover: #24515a;
+  --color-on-primary: #ffffff;
+
+  --color-inverse: #173b42;
+  --color-on-inverse: #ffffff;
+  --color-on-inverse-muted: #c9d7d8;
+
+  --color-accent: #276d64;
+  --color-accent-subtle: #e8f3ef;
+  --color-accent-soft: #ddede7;
+  --color-accent-line: #bcd8d1;
+
+  --color-highlight: #f8cf73;
+  --color-on-highlight: #173b42;
+  --color-attention: #e27064;
+
+  --color-danger: #913c34;
+  --color-danger-subtle: #faece9;
+  --color-on-danger: #ffffff;
+
+  --color-given: #276d64;
+  --color-given-subtle: #e8f3ef;
+  --color-not-given: #913c34;
+  --color-not-given-subtle: #faece9;
+
+  --color-disabled: #c9d0ce;
+
+  --color-focus: #173b42;
+  --color-focus-inverse: #f8cf73;
+  --color-focus-on-primary: #e27064;
+
+  --color-med-coral: #e27064;
+  --color-med-teal: #41998e;
+  --color-med-ochre: #936315;
+  --color-med-indigo: #6d7db3;
+  --color-on-med: #ffffff;
+}
+
+@custom-variant simplified (&:where([data-simplified-layout], [data-simplified-layout] *));
+
+/*
+ * Patient view settings. The attributes sit on the patient view root, so the
+ * carer screens keep the defaults above. Each block sets every token it needs
+ * outright: a token defined with var() would resolve at :root and ignore these.
+ */
+[data-theme="high-contrast"] {
+  --color-page: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-muted: #ffffff;
+  --color-surface-sunken: #eef1ee;
+  --color-overlay: #000000;
+
+  --color-ink: #0b1e23;
+  --color-ink-soft: #172e35;
+  --color-ink-muted: #172e35;
+
+  --color-line: #0b1e23;
+  --color-line-strong: #0b1e23;
+
+  --color-primary: #0b1e23;
+  --color-primary-hover: #173b42;
+  --color-on-primary: #ffffff;
+
+  --color-inverse: #0b1e23;
+  --color-on-inverse: #ffffff;
+  --color-on-inverse-muted: #eef1ee;
+
+  --color-accent: #0f4f47;
+  --color-accent-subtle: #ffffff;
+  --color-accent-soft: #eef1ee;
+  --color-accent-line: #0f4f47;
+
+  --color-highlight: #f8cf73;
+  --color-on-highlight: #0b1e23;
+  --color-attention: #b4371f;
+
+  --color-danger: #6e1f18;
+  --color-danger-subtle: #ffffff;
+  --color-on-danger: #ffffff;
+
+  --color-given: #0f4f47;
+  --color-given-subtle: #ffffff;
+  --color-not-given: #6e1f18;
+  --color-not-given-subtle: #ffffff;
+
+  --color-focus: #0b1e23;
+  --color-focus-inverse: #f8cf73;
+  --color-focus-on-primary: #b4371f;
+}
+
+[data-theme="dark"] {
+  --color-page: #102c33;
+  --color-surface: #173b42;
+  --color-surface-muted: #1d4750;
+  --color-surface-sunken: #102c33;
+  --color-overlay: #000000;
+
+  --color-ink: #ffffff;
+  --color-ink-soft: #d5e0de;
+  --color-ink-muted: #c9d7d8;
+
+  --color-line: #afc1c3;
+  --color-line-strong: #d5e0de;
+
+  --color-primary: #f8cf73;
+  --color-primary-hover: #ffe19c;
+  --color-on-primary: #173b42;
+
+  --color-inverse: #ffffff;
+  --color-on-inverse: #173b42;
+  --color-on-inverse-muted: #3e555a;
+
+  --color-accent: #f8cf73;
+  --color-accent-subtle: #102c33;
+  --color-accent-soft: #24515a;
+  --color-accent-line: #f8cf73;
+
+  --color-highlight: #f8cf73;
+  --color-on-highlight: #173b42;
+  --color-attention: #ffb3a8;
+
+  --color-danger: #ffc9c0;
+  --color-danger-subtle: #102c33;
+  --color-on-danger: #3a0f0a;
+
+  --color-given: #a8e0d2;
+  --color-given-subtle: #102c33;
+  --color-not-given: #ffc9c0;
+  --color-not-given-subtle: #102c33;
+
+  --color-disabled: #5b7378;
+
+  --color-focus: #ffffff;
+  --color-focus-inverse: #173b42;
+  --color-focus-on-primary: #ffffff;
+}
+
+/* Given and not given move off the red/green axis onto blue and orange. */
+[data-colour-safe] {
+  --color-given: #005a8c;
+  --color-given-subtle: #e6f1f8;
+  --color-not-given: #9a4100;
+  --color-not-given-subtle: #fbeee2;
+}
+
+[data-theme="high-contrast"][data-colour-safe] {
+  --color-given-subtle: #ffffff;
+  --color-not-given-subtle: #ffffff;
+}
+
+[data-theme="dark"][data-colour-safe] {
+  --color-given: #9cd0f5;
+  --color-given-subtle: #102c33;
+  --color-not-given: #ffc27a;
+  --color-not-given-subtle: #102c33;
+}
+
+/* Line heights are ratios in Tailwind's scale, so they follow the size. */
+[data-text-size="large"] {
+  --text-sm: calc(0.875rem * 1.125);
+  --text-base: calc(1rem * 1.125);
+  --text-lg: calc(1.125rem * 1.125);
+  --text-xl: calc(1.25rem * 1.125);
+  --text-2xl: calc(1.5rem * 1.125);
+  --text-3xl: calc(1.875rem * 1.125);
+  --text-4xl: calc(2.25rem * 1.125);
+  --text-5xl: calc(3rem * 1.125);
+}
+
+[data-text-size="extra-large"] {
+  --text-sm: calc(0.875rem * 1.25);
+  --text-base: calc(1rem * 1.25);
+  --text-lg: calc(1.125rem * 1.25);
+  --text-xl: calc(1.25rem * 1.25);
+  --text-2xl: calc(1.5rem * 1.25);
+  --text-3xl: calc(1.875rem * 1.25);
+  --text-4xl: calc(2.25rem * 1.25);
+  --text-5xl: calc(3rem * 1.25);
 }
 
 @layer base {
@@ -12,7 +206,7 @@
 
   html {
     font-family: var(--font-sans);
-    background: #f7f6f1;
+    background: var(--color-page);
   }
 
   body {
@@ -48,4 +242,13 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+html[data-reduced-motion] *,
+html[data-reduced-motion] *::before,
+html[data-reduced-motion] *::after {
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
 }
