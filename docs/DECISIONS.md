@@ -157,3 +157,63 @@ Format for each entry: date, the decision as a statement, the alternative that w
 **Alternative.** Keep the conditional render driven by component state, with the attribute alongside it as a second, unread source.
 
 **Why.** One source for the setting, and it is the same one the other three patient settings use. `display: none` removes the section from the accessibility tree as well, so a screen reader user gets the same simplified page.
+
+---
+
+## 2026-10-10: A schedule holds one time of day, and its end date is exclusive
+
+**Decision.** A schedule is one medication at one time of day, every day, from `startDate` up to but not including `endDate`. A medicine given twice a day has two schedules. Superseding sets the old schedule's `endDate` and the new schedule's `startDate` to the same date.
+
+**Alternative.** One schedule per medication carrying a list of times, with an inclusive end date.
+
+**Why.** With a list, moving the morning dose would supersede the evening dose along with it. One slot per schedule keeps a change as small as the thing that changed. The exclusive end means the two halves of a supersession share one date with no gap, no overlap and no day arithmetic, which is where off-by-one errors would otherwise live. Days of the week are not modelled: nothing in the app collects them yet.
+
+---
+
+## 2026-10-10: A recorded event is shown even when no schedule in force accounts for it
+
+**Decision.** A day's occurrences are the slots of the schedules in force, plus any event recorded for that date whose slot none of them produces. Those carry a null schedule id.
+
+**Alternative.** Resolve strictly through schedules and drop events that do not match.
+
+**Why.** Supersession protects the past only if the change starts after the last recorded event. If Meera logs the 08:00 dose and then moves it to 09:00 starting the same day, the strict version hides what she logged. That is the failure supersession exists to prevent, so the read side does not depend on every caller choosing the date well.
+
+---
+
+## 2026-10-10: Logging the same occurrence again replaces the event, provisionally
+
+**Decision.** `recordDose` replaces whatever is stored at the occurrence key. The latest write wins and the earlier one is not kept.
+
+**Alternative.** Append corrections and read the latest, keeping the mistake as an audit trail.
+
+**Why.** This is the correction question AGENTS.md lists as still open, and it is not being closed here. The model needed some behaviour for a second write, and replacing is what the natural key gives directly. Every read goes through `occurrencesOn`, so moving to append-only later changes `recordDose` and that one lookup. There is no function for removing an event yet, so a dose logged by mistake can be changed to the other outcome but not put back to pending. That belongs with the correction decision.
+
+---
+
+## 2026-10-10: Due soon starts 30 minutes before a dose, overdue 60 minutes after
+
+**Decision.** An unrecorded dose is pending until 30 minutes before its time, due soon from then until 60 minutes after, and overdue beyond that. Both numbers are a parameter with these defaults.
+
+**Alternative.** Overdue from the minute the scheduled time passes.
+
+**Why.** Logging at 8:05 for an 8:00 dose is a routine running smoothly, and a screen that says overdue at 8:01 tells Meera otherwise. The window describes the clock, not the medicine: it is the same for every dose and says nothing about whether a late dose should still be given.
+
+---
+
+## 2026-10-10: `recordedBy` is a role, and identifiers are strings supplied by the caller
+
+**Decision.** `recordedBy` is `carer` or `patient`. Medication and schedule ids are opaque strings passed in, never generated inside the model.
+
+**Alternative.** Store a person's name in `recordedBy`, and keep numeric ids from `Date.now()`.
+
+**Why.** With no accounts, the role is the only thing actually known, and a name would go stale when the carer details are edited. Generating an id needs a clock or randomness, which would stop the model functions being pure; taking it as an argument leaves that to the edge and retires the `Date.now()` collision when the UI is wired.
+
+---
+
+## 2026-10-10: Not-given reasons are a fixed set of seven, and medication keeps `purpose`
+
+**Decision.** The reason is one of `refused`, `asleep`, `unwell`, `unavailable`, `withheld-on-clinical-advice`, `carer-unable`, `other`. The wording shown for each stays in the UI. `Medication` has the fields listed in AGENTS.md plus `purpose`, `colour` and an optional image.
+
+**Alternative.** Store the sentence the carer picked, and drop `purpose` to match the listed fields exactly.
+
+**Why.** The seven are the options the reason dialog already offers. The sentences contain the patient's name, so storing them would bake a display string into the record. `purpose` is carer-entered and already on screen, so dropping it would lose something the carer wrote. The existing "10 mg · 1 tablet" string splits into `strength` and `form`.

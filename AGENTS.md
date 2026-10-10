@@ -187,7 +187,8 @@ Keep this section and Known issues accurate as work lands. They are the only par
 - Medication data, patient profile, carer details and consent record are seeded in memory and reset on refresh
 - No persistence layer yet
 - No tests
-- Dose state still lives on the medication object, contradicting the data model above
+- The dose event model exists in `src/model/` as types and pure functions: occurrences derived from schedules, the occurrence key, supersession, and status derived from the clock. Nothing imports it yet
+- In the UI, dose state still lives on the medication object, contradicting the data model above
 - Schedule times are still stored as display strings (`time: "8:00"`, `period: "AM"`) and parsed with `split(" ")`
 - `.figma/make/` is leftover harness tooling from the export and is unused
 
