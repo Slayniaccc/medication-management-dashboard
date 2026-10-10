@@ -184,19 +184,22 @@ Keep this section and Known issues accurate as work lands. They are the only par
 - The five accessibility settings drive the rendered output. Theme, text size, colour-safe and simplified layout are attributes on the patient view root, read by the semantic tokens and the `simplified` variant in `src/index.css`. Reduced motion is an attribute on `<html>`
 - Every screen uses the semantic colour tokens. The high-contrast, dark and colour-safe token values have not been measured for contrast or checked in a browser yet
 - The codebase has never been run through `pnpm format`. Running it restyles every file, so it has been left alone until that is done as its own change
-- Medication data, patient profile, carer details and consent record are seeded in memory and reset on refresh
+- Medications, schedules, dose events, patient profile, carer details and consent record are seeded in memory and reset on refresh. The seeded dose events are the two days before today
 - No persistence layer yet
 - No tests
-- The dose event model exists in `src/model/` as types and pure functions: occurrences derived from schedules, the occurrence key, supersession, and status derived from the clock. Nothing imports it yet
-- In the UI, dose state still lives on the medication object, contradicting the data model above
-- Schedule times are still stored as display strings (`time: "8:00"`, `period: "AM"`) and parsed with `split(" ")`
+- The dose event model lives in `src/model/` as types and pure functions, and the UI reads and writes through it. `App.tsx` holds medications, schedules and dose events as three pieces of state. Today's doses, the next dose, the medicine log and the due soon and overdue labels are all derived from them and a clock that ticks every 30 seconds
+- A not-given dose stores its reason as a code, and the medicine log shows it along with the scheduled time, the time it was logged and who logged it
+- Removing a prescription ends its schedules from today and keeps the medication definition, so logged doses still resolve. Nothing in the UI changes a schedule's time yet: "Edit prescription" and both "Remind in 10 min" buttons only show a toast
+- A logged dose cannot be changed or undone from the UI. That waits on the correction decision under Still open
+- The optional note on a dose event is displayed in the log if present, but no form collects one
 - `.figma/make/` is leftover harness tooling from the export and is unused
 
 ## Known issues
 
-- **`saveMissed` discards the reason.** It sets a status and clears the reason state without storing it, while showing a toast claiming the reason was saved. The current model has nowhere to put it. Fixed by the dose event model.
-- `id: Date.now()` is used for new medications, which collides within a millisecond and leaks a timestamp as identity.
-- `reminderTimes` exists only on medications added at runtime, not on seeded ones, so the shape is inconsistent.
+- **Removing a prescription has no confirmation and no undo**, which breaks the destructive actions invariant. Nothing is deleted underneath, so adding an undo is a UI change only.
+- A prescription added part way through the day shows that day's earlier reminder times as overdue, because a schedule starts on a date rather than at a moment.
+- The dashboard still contains a block with `className="hidden"` holding hardcoded adherence figures and log rows from the export. It is never displayed.
+- The reason dialog words "carer unable" in the first person, and the same sentence is shown in the log whoever reads it.
 
 ## Still open
 

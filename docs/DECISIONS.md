@@ -217,3 +217,73 @@ Format for each entry: date, the decision as a statement, the alternative that w
 **Alternative.** Store the sentence the carer picked, and drop `purpose` to match the listed fields exactly.
 
 **Why.** The seven are the options the reason dialog already offers. The sentences contain the patient's name, so storing them would bake a display string into the record. `purpose` is carer-entered and already on screen, so dropping it would lose something the carer wrote. The existing "10 mg · 1 tablet" string splits into `strength` and `form`.
+
+---
+
+## 2026-10-10: The dashboard lists doses, not medications
+
+**Decision.** "Today's prescriptions" renders one card per occurrence derived for today, and each card logs against its own occurrence key. A medicine given twice a day has two cards.
+
+**Alternative.** Keep one card per medication and log against its first reminder time.
+
+**Why.** One card per medication is the old shape with the status moved sideways: the second dose of the day would have no way to be logged. The cards carry the time in their accessible names so two doses of one medicine are told apart by a screen reader.
+
+---
+
+## 2026-10-10: Removing a prescription ends its schedules and keeps the definition
+
+**Decision.** "Remove" closes the medication's open schedules from today. The medication record stays, and the prescriptions list shows only medications with a schedule in force.
+
+**Alternative.** Delete the medication, as the export did.
+
+**Why.** Dose events refer to a medication by id, so deleting it leaves log rows that cannot be named. Closing schedules is the same supersession rule applied to stopping a medicine: the past still resolves and nothing is destroyed, which also means an undo can be added later without a data change. The missing confirmation is listed under Known issues rather than fixed here.
+
+---
+
+## 2026-10-10: The clock is state, read every 30 seconds
+
+**Decision.** `App` holds `now` and refreshes it on a 30 second interval. Due soon, overdue, today's date and the next dose are computed from it on each render.
+
+**Alternative.** Compute from `new Date()` during render and rely on other state changes to re-render.
+
+**Why.** Without a tick, a dashboard left open stays on "due soon" until something else happens to redraw it. Holding the time as state is not storing a status: nothing derived from it is written anywhere.
+
+---
+
+## 2026-10-10: Due soon and overdue are shown to the carer only
+
+**Decision.** The labels appear on the carer dashboard. The patient view shows the next unlogged dose and its time, with no label.
+
+**Alternative.** Show the same labels in both views.
+
+**Why.** "Overdue" in front of Asha, who may not be the one who can act on it, reads as an instruction to take something now. Meera is the person the label informs. Overdue uses the highlight colour rather than the danger colour because a late dose is a fact about the clock, not an error.
+
+---
+
+## 2026-10-10: A dose logged from the patient view is recorded by the patient
+
+**Decision.** `recordedBy` is `patient` for both patient view buttons, including "I did not take it", which hands over to the carer's reason dialog. Everything logged from the dashboard is `carer`.
+
+**Alternative.** Record `carer` whenever the reason dialog is used, since the dialog is on the carer dashboard.
+
+**Why.** The field should say who started the record. The flow through the carer's dialog is a leftover of the export and is worded for Meera, so this is the weakest call in this change and worth revisiting when the patient view gets its own flow.
+
+---
+
+## 2026-10-10: Prescription instructions are shown in the patient view with attribution, and no default is invented
+
+**Decision.** The patient view's next-dose card shows the instructions as "Meera's note: ..." using the carer's name. A prescription added without instructions stores an empty string, where the export stored "Follow the prescription instructions". Read-aloud speaks the name, strength, form and time only.
+
+**Alternative.** Keep the hardcoded "Take with breakfast and a full glass of water" and the placeholder sentence.
+
+**Why.** The card had to stop being hardcoded to Medicine 2, so the sentence had to come from data, and unattributed it is the app giving instruction. A placeholder instruction written by the app is the same problem stored in the record. Instructions elsewhere on the carer screens are still unattributed and are left for the copy pass.
+
+---
+
+## 2026-10-10: New ids come from `crypto.randomUUID()`
+
+**Decision.** Medication and schedule ids for prescriptions added at runtime are generated with `crypto.randomUUID()` in the event handler, outside the state updater.
+
+**Alternative.** A counter, or `Date.now()` as before.
+
+**Why.** It is built into the browser, so no dependency, and it does not collide or leak a timestamp. It needs a secure context, which localhost and any HTTPS host are. Generating outside the updater keeps the updater pure, so React running it twice in development cannot create two ids.

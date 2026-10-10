@@ -1,6 +1,25 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { doseStatus, occurrenceKey, occurrencesOn, recordDose } from "./model/doses";
+import { closeSchedule, isInForce } from "./model/schedules";
+import {
+  isTimeOfDay,
+  localDateOf,
+  toInstant,
+  wallClockDate,
+  type LocalDate,
+  type TimeOfDay,
+} from "./model/time";
+import type {
+  DoseEvent,
+  DoseStatus,
+  Medication,
+  MedicationColour,
+  NotGivenReason,
+  OccurrenceKey,
+  RecordedBy,
+  Schedule,
+} from "./model/types";
 
-type DoseStatus = "pending" | "taken" | "missed";
 type Screen =
   | "dashboard"
   | "prescriptions"
@@ -14,22 +33,6 @@ type Screen =
   | "help";
 type PatientTheme = "light" | "high-contrast" | "dark";
 type TextSize = "standard" | "large" | "extra-large";
-type MedicationColour = "coral" | "teal" | "ochre" | "indigo";
-
-type Medication = {
-  id: number;
-  name: string;
-  purpose: string;
-  dosage: string;
-  instructions: string;
-  time: string;
-  period: string;
-  colour: MedicationColour;
-  imageUrl?: string;
-  reminderTimes?: string[];
-  status: DoseStatus;
-};
-
 type IconProps = {
   name:
     | "home"
@@ -156,39 +159,156 @@ const medicationColourClass: Record<MedicationColour, string> = {
 
 const initialMedications: Medication[] = [
   {
-    id: 1,
+    id: "medicine-1",
     name: "Medicine 1",
     purpose: "Blood pressure",
-    dosage: "10 mg · 1 tablet",
+    strength: "10 mg",
+    form: "1 tablet",
     instructions: "Take with a full glass of water",
-    time: "8:00",
-    period: "AM",
+    carerNotes: "",
     colour: "coral",
-    status: "pending",
   },
   {
-    id: 2,
+    id: "medicine-2",
     name: "Medicine 2",
     purpose: "Blood sugar",
-    dosage: "500 mg · 1 tablet",
+    strength: "500 mg",
+    form: "1 tablet",
     instructions: "Take with breakfast",
-    time: "8:30",
-    period: "AM",
+    carerNotes: "",
     colour: "teal",
-    status: "pending",
   },
   {
-    id: 3,
+    id: "medicine-3",
     name: "Medicine 3",
     purpose: "Daily supplement",
-    dosage: "1,000 IU · 1 capsule",
+    strength: "1,000 IU",
+    form: "1 capsule",
     instructions: "Take with food",
-    time: "1:00",
-    period: "PM",
+    carerNotes: "",
     colour: "ochre",
-    status: "pending",
   },
 ];
+
+const initialSchedules: Schedule[] = [
+  {
+    id: "schedule-1",
+    medicationId: "medicine-1",
+    timeOfDay: "08:00",
+    startDate: "2026-01-01",
+    endDate: null,
+  },
+  {
+    id: "schedule-2",
+    medicationId: "medicine-2",
+    timeOfDay: "08:30",
+    startDate: "2026-01-01",
+    endDate: null,
+  },
+  {
+    id: "schedule-3",
+    medicationId: "medicine-3",
+    timeOfDay: "13:00",
+    startDate: "2026-01-01",
+    endDate: null,
+  },
+];
+
+const daysBefore = (at: Date, days: number): LocalDate =>
+  localDateOf(new Date(at.getFullYear(), at.getMonth(), at.getDate() - days));
+
+// The two days before today, so the medicine log has history to show. Seeded
+// relative to now because nothing is persisted yet.
+function seedEvents(now: Date): DoseEvent[] {
+  const yesterday = daysBefore(now, 1);
+  const dayBefore = daysBefore(now, 2);
+  const loggedAt = (date: LocalDate, time: TimeOfDay) => toInstant(wallClockDate(date, time));
+  return [
+    {
+      medicationId: "medicine-1",
+      date: dayBefore,
+      timeOfDay: "08:00",
+      outcome: "given",
+      recordedAt: loggedAt(dayBefore, "08:02"),
+      recordedBy: "carer",
+    },
+    {
+      medicationId: "medicine-3",
+      date: dayBefore,
+      timeOfDay: "13:00",
+      outcome: "not-given",
+      reason: "refused",
+      recordedAt: loggedAt(dayBefore, "13:00"),
+      recordedBy: "carer",
+    },
+    {
+      medicationId: "medicine-1",
+      date: yesterday,
+      timeOfDay: "08:00",
+      outcome: "given",
+      recordedAt: loggedAt(yesterday, "08:04"),
+      recordedBy: "carer",
+    },
+    {
+      medicationId: "medicine-2",
+      date: yesterday,
+      timeOfDay: "08:30",
+      outcome: "given",
+      recordedAt: loggedAt(yesterday, "08:32"),
+      recordedBy: "carer",
+    },
+  ];
+}
+
+function clockParts(hours: number, minutes: number) {
+  return {
+    clock: `${hours % 12 || 12}:${String(minutes).padStart(2, "0")}`,
+    period: hours < 12 ? "AM" : "PM",
+  };
+}
+
+function timeParts(timeOfDay: TimeOfDay) {
+  const [hours, minutes] = timeOfDay.split(":").map(Number);
+  return clockParts(hours, minutes);
+}
+
+function formatTime(timeOfDay: TimeOfDay) {
+  const { clock, period } = timeParts(timeOfDay);
+  return `${clock} ${period}`;
+}
+
+const reminderTimeOptions: TimeOfDay[] = ["08:00", "12:00", "18:00", "21:00"];
+
+const notGivenReasons: NotGivenReason[] = [
+  "refused",
+  "asleep",
+  "unwell",
+  "unavailable",
+  "withheld-on-clinical-advice",
+  "carer-unable",
+  "other",
+];
+
+// The stored reason is the code. The sentence is built here because it
+// contains the patient's name, which can change after the event is recorded.
+function reasonLabel(reason: NotGivenReason, patientName: string) {
+  const labels: Record<NotGivenReason, string> = {
+    refused: `${patientName} refused to take the medicine`,
+    asleep: `${patientName} was asleep`,
+    unwell: `${patientName} felt unwell`,
+    unavailable: "The medicine was unavailable",
+    "withheld-on-clinical-advice": "The dose was withheld following clinical advice",
+    "carer-unable": "I was unable to administer the medicine",
+    other: "Other reason",
+  };
+  return labels[reason];
+}
+
+// A logged dose shows its outcome instead, and a pending one needs no label.
+const unloggedStatusLabel: Partial<Record<DoseStatus, string>> = {
+  "due-soon": "Due soon",
+  overdue: "Overdue",
+};
 
 const navItems: Array<{
   label: string;
@@ -247,8 +367,14 @@ function ToggleRow({
 export default function App() {
   const [screen, setScreen] = useState<Screen>("dashboard");
   const [medications, setMedications] = useState(initialMedications);
-  const [reasonFor, setReasonFor] = useState<number | null>(null);
-  const [reason, setReason] = useState("");
+  const [schedules, setSchedules] = useState(initialSchedules);
+  const [events, setEvents] = useState(() => seedEvents(new Date()));
+  const [now, setNow] = useState(() => new Date());
+  const [reasonFor, setReasonFor] = useState<{
+    dose: OccurrenceKey;
+    recordedBy: RecordedBy;
+  } | null>(null);
+  const [reason, setReason] = useState<NotGivenReason | "">("");
   const [reminderOn, setReminderOn] = useState(true);
   const [toast, setToast] = useState("");
   const [showAddPrescription, setShowAddPrescription] = useState(false);
@@ -289,6 +415,43 @@ export default function App() {
     document.documentElement.toggleAttribute("data-reduced-motion", reducedMotion);
   }, [reducedMotion]);
 
+  // Due soon and overdue are read off the clock, so the clock has to move.
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const today = localDateOf(now);
+  const medicationById = new Map(medications.map((item) => [item.id, item]));
+  const todaysDoses = occurrencesOn(today, schedules, events);
+  const todaysRows = todaysDoses.flatMap((dose) => {
+    const medication = medicationById.get(dose.medicationId);
+    return medication ? [{ dose, medication, status: doseStatus(dose, now) }] : [];
+  });
+  const nextDose = todaysDoses.find((dose) => dose.event === null) ?? null;
+  const nextMedication = nextDose ? (medicationById.get(nextDose.medicationId) ?? null) : null;
+  const activeSchedules = schedules
+    .filter((schedule) => isInForce(schedule, today))
+    .sort((a, b) => (a.timeOfDay < b.timeOfDay ? -1 : a.timeOfDay > b.timeOfDay ? 1 : 0));
+  // A removed prescription keeps its definition so the log can still name it.
+  const activeMedications = medications.filter((item) =>
+    activeSchedules.some((schedule) => schedule.medicationId === item.id),
+  );
+  const reminderTimesFor = (medicationId: string) =>
+    activeSchedules
+      .filter((schedule) => schedule.medicationId === medicationId)
+      .map((schedule) => formatTime(schedule.timeOfDay));
+  const dayLabel = (date: LocalDate) =>
+    date === today
+      ? "Today"
+      : date === daysBefore(now, 1)
+        ? "Yesterday"
+        : wallClockDate(date, "00:00").toLocaleDateString("en-GB", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          });
+
   const prescriptionIsComplete =
     Boolean(newDosage) &&
     Boolean(newQuantity) &&
@@ -311,23 +474,52 @@ export default function App() {
       .slice(0, 2)
       .toUpperCase() || "P";
 
-  const markTaken = (id: number) => {
-    setMedications((items) =>
-      items.map((item) => (item.id === id ? { ...item, status: "taken" } : item)),
+  const markGiven = ({ medicationId, date, timeOfDay }: OccurrenceKey, recordedBy: RecordedBy) => {
+    const recordedAt = toInstant(new Date());
+    setEvents((items) =>
+      recordDose(items, { medicationId, date, timeOfDay, outcome: "given", recordedAt, recordedBy }),
     );
     setToast("Dose logged as given.");
     window.setTimeout(() => setToast(""), 2800);
   };
 
-  const saveMissed = () => {
+  const saveNotGiven = () => {
     if (!reasonFor || !reason) return;
-    setMedications((items) =>
-      items.map((item) => (item.id === reasonFor ? { ...item, status: "missed" } : item)),
+    const { medicationId, date, timeOfDay } = reasonFor.dose;
+    const recordedAt = toInstant(new Date());
+    setEvents((items) =>
+      recordDose(items, {
+        medicationId,
+        date,
+        timeOfDay,
+        outcome: "not-given",
+        reason,
+        recordedAt,
+        recordedBy: reasonFor.recordedBy,
+      }),
     );
     setReasonFor(null);
     setReason("");
     setToast("Not-given dose and reason saved.");
     window.setTimeout(() => setToast(""), 2800);
+  };
+
+  // Ends the medicine's schedules from today rather than deleting anything, so
+  // doses already logged against it keep resolving.
+  const removePrescription = (medicationId: string) => {
+    setSchedules((items) =>
+      items
+        .filter((schedule) => schedule.medicationId === medicationId && schedule.endDate === null)
+        .reduce(
+          (result, schedule) =>
+            closeSchedule(
+              result,
+              schedule.id,
+              schedule.startDate > today ? schedule.startDate : today,
+            ),
+          items,
+        ),
+    );
   };
 
   const goTo = (target: string) => {
@@ -346,25 +538,31 @@ export default function App() {
   };
 
   const savePrescription = () => {
-    const reminderTimes = newTimes.filter(Boolean);
-    if (!newDosage || !newQuantity || reminderTimes.length === 0) return;
-    const [time, period = "AM"] = reminderTimes[0].split(" ");
+    const times = [...new Set(newTimes.filter(isTimeOfDay))];
+    if (!newDosage || !newQuantity || times.length === 0) return;
+    const medicationId = crypto.randomUUID();
+    const added: Schedule[] = times.map((timeOfDay) => ({
+      id: crypto.randomUUID(),
+      medicationId,
+      timeOfDay,
+      startDate: today,
+      endDate: null,
+    }));
     setMedications((items) => [
       ...items,
       {
-        id: Date.now(),
+        id: medicationId,
         name: `Medicine ${items.length + 1}`,
         purpose: "New prescription",
-        dosage: `${newDosage} · ${newQuantity}`,
-        instructions: "Follow the prescription instructions",
-        time,
-        period,
+        strength: newDosage,
+        form: newQuantity,
+        instructions: "",
+        carerNotes: "",
         colour: "indigo",
         imageUrl: medicineImage || undefined,
-        reminderTimes,
-        status: "pending",
       },
     ]);
+    setSchedules((items) => [...items, ...added]);
     setShowAddPrescription(false);
     setNewDosage("");
     setNewQuantity("");
@@ -380,8 +578,11 @@ export default function App() {
       return;
     }
     window.speechSynthesis.cancel();
+    const greeting = `Hello ${patientName.split(" ")[0]}.`;
     const message = new SpeechSynthesisUtterance(
-      `Hello ${patientName.split(" ")[0]}. Your next medicine is Medicine 2, 500 milligrams, at 8:30 AM. Take one tablet with breakfast.`,
+      nextDose && nextMedication
+        ? `${greeting} Your next medicine is ${nextMedication.name}, ${nextMedication.strength}, ${nextMedication.form}, at ${formatTime(nextDose.timeOfDay)}.`
+        : `${greeting} Every medicine for today has been recorded.`,
     );
     message.rate = 0.85;
     window.speechSynthesis.speak(message);
@@ -553,7 +754,7 @@ export default function App() {
     return renderCarerPage(
       "Medication management",
       "Prescriptions",
-      `Manage all ${medications.length} prescriptions for ${patientName}.`,
+      `Manage all ${activeMedications.length} prescriptions for ${patientName}.`,
       <div>
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
           <button
@@ -569,7 +770,7 @@ export default function App() {
           </button>
         </div>
         <div className="mt-5 grid gap-5 xl:grid-cols-2">
-          {medications.map((medication) => (
+          {activeMedications.map((medication) => (
             <article
               className="rounded-2xl border border-line bg-surface p-6"
               key={medication.id}
@@ -590,20 +791,21 @@ export default function App() {
                 )}
                 <div className="min-w-0">
                   <h2 className="text-xl font-bold">{medication.name}</h2>
-                  <p className="mt-1 font-bold text-ink-soft">{medication.dosage}</p>
+                  <p className="mt-1 font-bold text-ink-soft">
+                    {medication.strength} · {medication.form}
+                  </p>
                   <p className="mt-1 text-ink-muted">{medication.purpose}</p>
                 </div>
               </div>
               <dl className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-surface-muted p-3">
                   <dt className="text-sm font-bold text-ink-muted">Instructions</dt>
-                  <dd className="mt-1">{medication.instructions}</dd>
+                  <dd className="mt-1">{medication.instructions || "None entered"}</dd>
                 </div>
                 <div className="rounded-xl bg-surface-muted p-3">
                   <dt className="text-sm font-bold text-ink-muted">Reminder times</dt>
                   <dd className="mt-1 font-bold">
-                    {medication.reminderTimes?.join(", ") ??
-                      `${medication.time} ${medication.period}`}
+                    {reminderTimesFor(medication.id).join(", ")}
                   </dd>
                 </div>
               </dl>
@@ -621,11 +823,7 @@ export default function App() {
                 <button
                   aria-label={`Remove ${medication.name}`}
                   className="min-h-11 rounded-xl border-2 border-danger px-4 text-sm font-bold text-danger hover:bg-danger-subtle focus-visible:outline-3 focus-visible:outline-focus"
-                  onClick={() =>
-                    setMedications((items) =>
-                      items.filter((item) => item.id !== medication.id),
-                    )
-                  }
+                  onClick={() => removePrescription(medication.id)}
                   type="button"
                 >
                   Remove
@@ -648,35 +846,37 @@ export default function App() {
           <h2 id="reminder-list-heading" className="sr-only">
             Scheduled reminders
           </h2>
-          {medications.map((medication, index) => (
-            <article
-              className="flex flex-col gap-5 rounded-2xl border border-line bg-surface p-5 sm:flex-row sm:items-center"
-              key={medication.id}
-            >
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
-                <Icon name="bell" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-xl font-bold">
-                  {medication.time} {medication.period}
-                </p>
-                <p className="mt-1 font-bold">{medication.name}</p>
-                <p className="mt-1 text-sm text-ink-muted">{medication.dosage}</p>
-              </div>
-              <button
-                className="min-h-12 rounded-xl border-2 border-accent px-4 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus"
-                onClick={() => {
-                  setToast(
-                    `${medication.name} reminder moved ${index === 0 ? "to 8:10 AM" : "by 10 minutes"}.`,
-                  );
-                  window.setTimeout(() => setToast(""), 2800);
-                }}
-                type="button"
+          {activeSchedules.map((schedule) => {
+            const medication = medicationById.get(schedule.medicationId);
+            if (!medication) return null;
+            return (
+              <article
+                className="flex flex-col gap-5 rounded-2xl border border-line bg-surface p-5 sm:flex-row sm:items-center"
+                key={schedule.id}
               >
-                Remind in 10 min
-              </button>
-            </article>
-          ))}
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+                  <Icon name="bell" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xl font-bold">{formatTime(schedule.timeOfDay)}</p>
+                  <p className="mt-1 font-bold">{medication.name}</p>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    {medication.strength} · {medication.form}
+                  </p>
+                </div>
+                <button
+                  className="min-h-12 rounded-xl border-2 border-accent px-4 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus"
+                  onClick={() => {
+                    setToast(`${medication.name} reminder moved by 10 minutes.`);
+                    window.setTimeout(() => setToast(""), 2800);
+                  }}
+                  type="button"
+                >
+                  Remind in 10 min
+                </button>
+              </article>
+            );
+          })}
         </section>
         <aside className="rounded-2xl border border-line bg-surface p-6">
           <h2 className="text-xl font-bold">Reminder controls</h2>
@@ -700,6 +900,11 @@ export default function App() {
   }
 
   if (screen === "log") {
+    // Newest first. The occurrence key sorts in scheduled order.
+    const loggedDoses = [...events].sort((a, b) =>
+      occurrenceKey(a) < occurrenceKey(b) ? 1 : -1,
+    );
+
     return renderCarerPage(
       "Care records",
       "Medicine log",
@@ -723,49 +928,59 @@ export default function App() {
             Export log
           </button>
         </div>
+        {loggedDoses.length === 0 && (
+          <p className="p-5 text-ink-muted">
+            No doses logged yet. Log a dose from the dashboard and it appears here.
+          </p>
+        )}
         <ul className="divide-y divide-line">
-          {[
-            ["Medicine 1", "10 mg", "Given", "Today, 8:04 AM", ""],
-            ["Medicine 2", "500 mg", "Given", "Yesterday, 8:32 AM", ""],
-            [
-              "Medicine 3",
-              "1,000 IU",
-              "Not given",
-              "Sunday, 1:00 PM",
-              `${patientName} refused`,
-            ],
-            ["Medicine 1", "10 mg", "Given", "Sunday, 8:02 AM", ""],
-          ].map(([name, dose, status, date, note], index) => (
-            <li className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center" key={index}>
-              <span
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                  status === "Given"
-                    ? "bg-given-subtle text-given"
-                    : "bg-not-given-subtle text-not-given"
-                }`}
+          {loggedDoses.map((event) => {
+            const medication = medicationById.get(event.medicationId);
+            const given = event.outcome === "given";
+            const loggedAt = new Date(event.recordedAt);
+            const loggedOn = localDateOf(loggedAt);
+            const loggedTime = clockParts(loggedAt.getHours(), loggedAt.getMinutes());
+            return (
+              <li
+                className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center"
+                key={occurrenceKey(event)}
               >
-                <Icon name={status === "Given" ? "check" : "close"} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="font-bold">
-                  {name} · {dose}
-                </p>
-                <p className="mt-1 text-sm text-ink-muted">
-                  {date}
-                  {note && ` · ${note}`}
-                </p>
-              </div>
-              <span
-                className={`rounded-full px-3 py-2 text-sm font-bold ${
-                  status === "Given"
-                    ? "bg-given-subtle text-given"
-                    : "bg-not-given-subtle text-not-given"
-                }`}
-              >
-                {status}
-              </span>
-            </li>
-          ))}
+                <span
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                    given ? "bg-given-subtle text-given" : "bg-not-given-subtle text-not-given"
+                  }`}
+                >
+                  <Icon name={given ? "check" : "close"} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold">
+                    {medication ? `${medication.name} · ${medication.strength}` : "Medicine"}
+                  </p>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    Scheduled {dayLabel(event.date)}, {formatTime(event.timeOfDay)} · Logged{" "}
+                    {loggedOn === event.date ? "" : `${dayLabel(loggedOn)}, `}
+                    {loggedTime.clock} {loggedTime.period} by{" "}
+                    {event.recordedBy === "carer" ? carerName : patientName}
+                  </p>
+                  {event.outcome === "not-given" && (
+                    <p className="mt-1 text-sm font-bold text-ink-soft">
+                      Reason: {reasonLabel(event.reason, patientName)}
+                    </p>
+                  )}
+                  {event.note && (
+                    <p className="mt-1 text-sm text-ink-soft">Note: {event.note}</p>
+                  )}
+                </div>
+                <span
+                  className={`rounded-full px-3 py-2 text-sm font-bold ${
+                    given ? "bg-given-subtle text-given" : "bg-not-given-subtle text-not-given"
+                  }`}
+                >
+                  {given ? "Given" : "Not given"}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       </section>,
     );
@@ -1529,8 +1744,12 @@ export default function App() {
   }
 
   if (screen === "patient") {
-    const patientDoseWasTaken =
-      medications.find((medication) => medication.id === 2)?.status === "taken";
+    const lastLogged = todaysDoses.reduce<DoseEvent | null>(
+      (latest, dose) =>
+        dose.event && (!latest || dose.event.recordedAt > latest.recordedAt) ? dose.event : latest,
+      null,
+    );
+    const lastLoggedMedication = lastLogged ? medicationById.get(lastLogged.medicationId) : null;
 
     return (
       <div
@@ -1581,29 +1800,48 @@ export default function App() {
             Here is what you need to do next. Ask your carer if you are unsure.
           </p>
 
+          {lastLogged && lastLoggedMedication && (
+            <div
+              className={`mt-8 flex min-h-16 items-center gap-3 rounded-xl border-2 px-5 py-3 text-lg font-bold ${
+                lastLogged.outcome === "given"
+                  ? "border-given bg-given-subtle text-given"
+                  : "border-not-given bg-not-given-subtle text-not-given"
+              }`}
+              role="status"
+            >
+              <Icon name={lastLogged.outcome === "given" ? "check" : "close"} />
+              {lastLoggedMedication.name}, {formatTime(lastLogged.timeOfDay)}: recorded as{" "}
+              {lastLogged.outcome === "given" ? "taken" : "not taken"}
+            </div>
+          )}
+
           <section
             aria-labelledby="patient-next-dose"
             className="mt-8 rounded-2xl border-2 border-line bg-surface p-6 md:p-8"
           >
-            <p className="font-bold uppercase tracking-[0.08em] text-accent">
-              Next medicine · 8:30 AM
-            </p>
-            <h2 id="patient-next-dose" className="mt-3 text-3xl font-bold">
-              Medicine 2
-            </h2>
-            <p className="mt-2 text-xl font-bold text-ink-soft">500 mg · 1 tablet</p>
-            <p className="mt-4 leading-relaxed text-ink-soft">
-              Take with breakfast and a full glass of water.
-            </p>
-            {patientDoseWasTaken ? (
-              <div
-                className="mt-6 flex min-h-16 items-center justify-center gap-3 rounded-xl border-2 border-given bg-given-subtle px-5 text-lg font-bold text-given"
-                role="status"
-              >
-                <Icon name="check" />
-                Recorded as taken
-              </div>
-            ) : !allowMedicineChanges ? (
+            {!nextDose || !nextMedication ? (
+              <h2 id="patient-next-dose" className="text-3xl font-bold">
+                Every medicine for today is recorded
+              </h2>
+            ) : (
+              <>
+                <p className="font-bold uppercase tracking-[0.08em] text-accent">
+                  Next medicine · {formatTime(nextDose.timeOfDay)}
+                </p>
+                <h2 id="patient-next-dose" className="mt-3 text-3xl font-bold">
+                  {nextMedication.name}
+                </h2>
+                <p className="mt-2 text-xl font-bold text-ink-soft">
+                  {nextMedication.strength} · {nextMedication.form}
+                </p>
+                {nextMedication.instructions && (
+                  <p className="mt-4 leading-relaxed text-ink-soft">
+                    {carerName}’s note: {nextMedication.instructions}
+                  </p>
+                )}
+              </>
+            )}
+            {!nextDose ? null : !allowMedicineChanges ? (
               <div className="mt-6 rounded-xl border-2 border-line-strong bg-surface-sunken p-5 text-ink">
                 <p className="font-bold">Dose reporting is managed by your carer</p>
                 <p className="mt-2 text-base leading-relaxed text-ink-soft">
@@ -1615,7 +1853,7 @@ export default function App() {
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <button
                   className="min-h-16 rounded-xl bg-primary px-6 text-lg font-bold text-on-primary focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
-                  onClick={() => markTaken(2)}
+                  onClick={() => markGiven(nextDose, "patient")}
                   type="button"
                 >
                   I have taken this medicine
@@ -1624,7 +1862,7 @@ export default function App() {
                   className="min-h-16 rounded-xl border-2 border-not-given px-6 text-lg font-bold text-not-given focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   onClick={() => {
                     setScreen("dashboard");
-                    setReasonFor(2);
+                    setReasonFor({ dose: nextDose, recordedBy: "patient" });
                   }}
                   type="button"
                 >
@@ -1642,8 +1880,10 @@ export default function App() {
               Your medicine summary
             </h2>
             <p className="mt-2 text-ink-soft">
-              You have {medications.length} medicines scheduled today and your next
-              reminder is at 8:30 AM.
+              You have {activeMedications.length} medicines scheduled today
+              {nextDose
+                ? ` and your next reminder is at ${formatTime(nextDose.timeOfDay)}.`
+                : " and every dose is recorded."}
             </p>
           </section>
 
@@ -1862,7 +2102,7 @@ export default function App() {
                   Good morning, {carerName.split(" ")[0] || "Carer"}
                 </h1>
                 <p className="mt-2 text-base text-ink-muted">
-                  {patientName} has {medications.length} prescriptions scheduled today.
+                  {patientName} has {activeMedications.length} prescriptions scheduled today.
                 </p>
               </div>
               <button
@@ -1885,28 +2125,38 @@ export default function App() {
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface text-accent shadow-sm">
                     <Icon name="bell" className="h-6 w-6" />
                   </div>
-                  <div>
-                    <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
-                      Next reminder · in 20 minutes
-                    </p>
-                    <h2 id="next-dose-heading" className="mt-1 text-xl font-bold">
-                      Medicine 2, 500 mg
+                  {nextDose && nextMedication ? (
+                    <div>
+                      <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
+                        Next reminder ·{" "}
+                        {unloggedStatusLabel[doseStatus(nextDose, now)] ??
+                          formatTime(nextDose.timeOfDay)}
+                      </p>
+                      <h2 id="next-dose-heading" className="mt-1 text-xl font-bold">
+                        {nextMedication.name}, {nextMedication.strength}
+                      </h2>
+                      <p className="mt-1 text-base font-medium text-ink-soft">
+                        {formatTime(nextDose.timeOfDay)} · {nextMedication.form}
+                      </p>
+                    </div>
+                  ) : (
+                    <h2 id="next-dose-heading" className="mt-2 text-xl font-bold">
+                      Every dose for today is logged
                     </h2>
-                    <p className="mt-1 text-base font-medium text-ink-soft">
-                      8:30 AM · Take 1 tablet with breakfast
-                    </p>
-                  </div>
+                  )}
                 </div>
-                <button
-                  className="min-h-11 rounded-xl border-2 border-accent bg-transparent px-5 text-sm font-bold text-accent hover:bg-surface/60 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                  onClick={() => {
-                    setToast("Reminder moved to 8:40 AM.");
-                    window.setTimeout(() => setToast(""), 2800);
-                  }}
-                  type="button"
-                >
-                  Remind me in 10 min
-                </button>
+                {nextDose && (
+                  <button
+                    className="min-h-11 rounded-xl border-2 border-accent bg-transparent px-5 text-sm font-bold text-accent hover:bg-surface/60 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                    onClick={() => {
+                      setToast("Reminder moved by 10 minutes.");
+                      window.setTimeout(() => setToast(""), 2800);
+                    }}
+                    type="button"
+                  >
+                    Remind me in 10 min
+                  </button>
+                )}
               </div>
             </section>
 
@@ -1936,13 +2186,13 @@ export default function App() {
                 </div>
 
                 <div className="space-y-4">
-                  {medications.map((medication) => (
+                  {todaysRows.map(({ dose, medication, status }) => (
                     <article
-                      key={medication.id}
+                      key={occurrenceKey(dose)}
                       className={`rounded-2xl border bg-surface p-5 shadow-xs transition md:p-6 ${
-                        medication.status === "taken"
+                        status === "given"
                           ? "border-given"
-                          : medication.status === "missed"
+                          : status === "not-given"
                             ? "border-not-given"
                             : "border-line"
                       }`}
@@ -1971,34 +2221,46 @@ export default function App() {
                               </span>
                             </div>
                             <p className="mt-1 font-bold text-ink-soft">
-                              {medication.dosage}
+                              {medication.strength} · {medication.form}
                             </p>
-                            <p className="mt-1 text-base text-ink-muted">
-                              {medication.instructions}
-                            </p>
-                            {medication.reminderTimes &&
-                              medication.reminderTimes.length > 1 && (
-                                <p className="mt-2 text-sm font-bold text-accent">
-                                  {medication.reminderTimes.length} daily reminders:{" "}
-                                  {medication.reminderTimes.join(", ")}
-                                </p>
-                              )}
+                            {medication.instructions && (
+                              <p className="mt-1 text-base text-ink-muted">
+                                {medication.instructions}
+                              </p>
+                            )}
+                            {reminderTimesFor(medication.id).length > 1 && (
+                              <p className="mt-2 text-sm font-bold text-accent">
+                                {reminderTimesFor(medication.id).length} daily reminders:{" "}
+                                {reminderTimesFor(medication.id).join(", ")}
+                              </p>
+                            )}
                           </div>
                         </div>
 
                         <div className="flex items-center gap-4 border-t border-line pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
-                          <div className="w-16 text-center">
-                            <p className="text-xl font-bold">{medication.time}</p>
+                          <div className="w-20 text-center">
+                            <p className="text-xl font-bold">{timeParts(dose.timeOfDay).clock}</p>
                             <p className="text-sm font-bold text-ink-muted">
-                              {medication.period}
+                              {timeParts(dose.timeOfDay).period}
                             </p>
+                            {unloggedStatusLabel[status] && (
+                              <p
+                                className={`mt-1 rounded-full px-1 py-0.5 text-sm font-bold ${
+                                  status === "overdue"
+                                    ? "bg-highlight text-on-highlight"
+                                    : "bg-accent-subtle text-accent"
+                                }`}
+                              >
+                                {unloggedStatusLabel[status]}
+                              </p>
+                            )}
                           </div>
-                          {medication.status === "pending" ? (
+                          {dose.event === null ? (
                             <div className="flex flex-1 gap-2 md:flex-none">
                               <button
-                                aria-label={`Mark ${medication.name} as given to ${patientName}`}
+                                aria-label={`Mark the ${formatTime(dose.timeOfDay)} dose of ${medication.name} as given to ${patientName}`}
                                 className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary md:flex-none"
-                                onClick={() => markTaken(medication.id)}
+                                onClick={() => markGiven(dose, "carer")}
                                 type="button"
                               >
                                 <span className="flex h-5 w-5 items-center justify-center rounded-md border-2 border-on-primary">
@@ -2007,9 +2269,9 @@ export default function App() {
                                 Given
                               </button>
                               <button
-                                aria-label={`Mark ${medication.name} as not given to ${patientName}`}
+                                aria-label={`Mark the ${formatTime(dose.timeOfDay)} dose of ${medication.name} as not given to ${patientName}`}
                                 className="min-h-12 rounded-xl border border-line-strong px-3 text-sm font-bold text-ink-muted hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                                onClick={() => setReasonFor(medication.id)}
+                                onClick={() => setReasonFor({ dose, recordedBy: "carer" })}
                                 type="button"
                               >
                                 Not given
@@ -2018,16 +2280,16 @@ export default function App() {
                           ) : (
                             <div
                               className={`flex min-h-12 min-w-36 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold ${
-                                medication.status === "taken"
+                                status === "given"
                                   ? "bg-given-subtle text-given"
                                   : "bg-not-given-subtle text-not-given"
                               }`}
                             >
                               <Icon
-                                name={medication.status === "taken" ? "check" : "close"}
+                                name={status === "given" ? "check" : "close"}
                                 className="h-4 w-4"
                               />
-                              {medication.status === "taken" ? "Given" : "Not given"}
+                              {status === "given" ? "Given" : "Not given"}
                             </div>
                           )}
                         </div>
@@ -2344,10 +2606,11 @@ export default function App() {
                         value={reminderTime}
                       >
                         <option value="">Choose a time</option>
-                        <option value="8:00 AM">8:00 AM</option>
-                        <option value="12:00 PM">12:00 PM</option>
-                        <option value="6:00 PM">6:00 PM</option>
-                        <option value="9:00 PM">9:00 PM</option>
+                        {reminderTimeOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {formatTime(option)}
+                          </option>
+                        ))}
                       </select>
                       {newTimes.length > 1 && (
                         <button
@@ -2430,15 +2693,7 @@ export default function App() {
               <legend className="sr-only">
                 Reason the dose was not given to {patientName}
               </legend>
-              {[
-                `${patientName} refused to take the medicine`,
-                `${patientName} was asleep`,
-                `${patientName} felt unwell`,
-                "The medicine was unavailable",
-                "The dose was withheld following clinical advice",
-                "I was unable to administer the medicine",
-                "Other reason",
-              ].map((option) => (
+              {notGivenReasons.map((option) => (
                 <label
                   className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 text-sm font-semibold transition ${
                     reason === option
@@ -2455,7 +2710,7 @@ export default function App() {
                     type="radio"
                     value={option}
                   />
-                  {option}
+                  {reasonLabel(option, patientName)}
                 </label>
               ))}
             </fieldset>
@@ -2470,7 +2725,7 @@ export default function App() {
               <button
                 className="min-h-12 flex-1 rounded-xl bg-primary px-4 text-sm font-bold text-on-primary enabled:hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
                 disabled={!reason}
-                onClick={saveMissed}
+                onClick={saveNotGiven}
                 type="button"
               >
                 Save to care log
