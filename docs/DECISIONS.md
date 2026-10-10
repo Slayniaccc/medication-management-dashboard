@@ -421,3 +421,21 @@ The hook is called from the form rather than from `App.tsx`, which is new: scree
 **Markup.** The reason options are a `fieldset` with `role="radiogroup"`, because `aria-invalid` and `aria-required` are not supported on a plain group. Messages sit outside each `<label>` so they are not read as part of the field's name. The invalid border uses `aria-[invalid=true]:` so the attribute is the single source of the styling.
 
 **Not done here.** Setup and carer details are stored as typed, so the check stops the form closing rather than stopping the save. Every message is announced at once and the first is then read again on focus. Enter does not submit, because none of the forms is a `<form>` element. The photo field reports no failure. None of this has been run through a screen reader or a browser yet.
+
+---
+
+## 2026-10-10: The 44px floor is a base rule as well as a class on each control, and the mobile navigation wraps
+
+**Decision.** Every control found under 44 by 44 was resized where it is written, and `src/index.css` also sets a 44px minimum width and height on every `button`, `select`, `textarea` and text-like `input`. The mobile navigation strip wraps onto further rows instead of scrolling sideways.
+
+**Alternative.** Fix the offenders only and rely on reading the class strings from then on. Keep the strip on one row and accept the sideways scroll as ordinary browser scrolling.
+
+**Why.** The audit found most controls already at 44 or more, and five that were not: the switch in `ToggleRow` at 32 high, the logo button in the mobile header at 40, "Edit" on the carer card at 40, and two buttons in the dashboard block that is never displayed. That is what sizing by convention produces, so the floor is also stated once where a new button gets it without anyone remembering. It is a net and not the mechanism: a `min-h` or `min-w` utility still overrides it. Tick boxes, radio buttons and the file picker are left out because each sits inside a label of 48px or more, and the label is the target.
+
+The switch keeps its 32px track as a picture inside a 44px button, so the settings screens look the same. Making the whole row the target was the larger change and would have nested the description inside the button's name.
+
+The sideways strip was the one interaction that needed a drag. Reaching the last items meant a swipe on a touch screen, and with a mouse it meant dragging a scrollbar or holding shift while turning the wheel, which is two hands. Wrapping costs two or three rows of height on a phone and puts every destination one tap away. It also ends the strip scrolling back to its start on each change of screen, since there is nothing left to scroll.
+
+**Checked and left alone.** No component handles pointer, touch or drag events, and nothing uses a long press. The file, date and select fields open the platform's own pickers on a single tap. The resize handle on a text area is a drag, but it is optional and the field works at the size given. The number field's stepper arrows are small, and typing does the same job.
+
+**Not done here.** The sizes were read from the class strings and not measured in a browser, so nothing here confirms the rendered boxes at 200% zoom or at the larger text sizes. The gap between adjacent targets was not audited.

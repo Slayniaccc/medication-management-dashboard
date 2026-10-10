@@ -197,6 +197,8 @@ Keep this section and Known issues accurate as work lands. They are the only par
 - `src/App.tsx` is composition only. It calls the hooks, picks the screen and hands each one its props. It holds no state, no handlers and no markup of its own. There is no context provider, so the screens still take long prop lists
 - The four forms check themselves when their save button is pressed: add prescription, the not-given reason, patient setup and the carer's own details. No save button is disabled. A failed check shows a message under each field at fault as a `role="alert"`, sets `aria-invalid` and `aria-describedby` on the field, and moves focus to the first one. `useFormErrors` in `src/state/` holds the one piece of state behind this and is called by the form itself, not by `App.tsx`, so the messages go when the form closes. None of it has been checked with a screen reader or in a browser yet
 - What each form requires: a dosage, a quantity and a time in every reminder row; a reason; a consent date and the consent tick; the carer's name. Nothing checks the format of the phone number, the email address or the patient's age
+- Every control is at least 44 by 44 CSS pixels as written. Each is sized where it is used, and `src/index.css` sets the same minimum on every `button`, `select`, `textarea` and text-like `input` as a net for one nobody sized. Tick boxes, radio buttons and the file picker rely on the label around them being the target. The sizes were read from the classes and have not been measured in a browser
+- Nothing needs a drag, a pinch, a long press or two hands. The mobile navigation wraps onto further rows instead of scrolling sideways
 - `Dialog` is the shared shell for both dialogs and nothing more: it does not move focus in when it opens, trap focus, close on Escape or return focus when it closes
 - A not-given dose stores its reason as a code, and the medicine log shows it along with the scheduled time, the time it was logged and who logged it
 - Removing a prescription ends its schedules from today and keeps the medication definition, so logged doses still resolve. Nothing in the UI changes a schedule's time yet: "Edit prescription" and both "Remind in 10 min" buttons only show a toast
@@ -217,7 +219,9 @@ Keep this section and Known issues accurate as work lands. They are the only par
 - A medicine photo that cannot be read, or a chosen file that is not an image, fails without a message.
 - A medicine photo is stored at the size it was chosen, as a data URL inside the medication record. Nothing resizes it.
 - The storage notice and the skip link sit outside the patient view root, so they do not follow Asha's theme or text size.
-- The mobile navigation strip scrolls back to its start on every change of screen, and on the dashboard it does not mark the current page.
+- On the dashboard the mobile navigation does not mark the current page.
+- The mobile navigation buttons on every carer screen except the dashboard have no visible focus ring of their own.
+- The gap between neighbouring targets has not been audited.
 - The page title is the same on every view.
 - Where a view's heading is the same as its name, a screen reader may hear the name twice on a change of view: once for the focused heading and once from the live region.
 

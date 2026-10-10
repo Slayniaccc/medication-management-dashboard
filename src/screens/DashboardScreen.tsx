@@ -166,11 +166,11 @@ export function DashboardScreen({
 
           <nav
             aria-label="Main"
-            className="flex gap-2 overflow-x-auto border-b border-line bg-surface px-4 py-3 lg:hidden"
+            className="flex flex-wrap gap-2 border-b border-line bg-surface px-4 py-3 lg:hidden"
           >
             {navItems.map((item) => (
               <button
-                className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-surface-sunken px-4 text-sm font-bold text-ink focus-visible:outline-3 focus-visible:outline-focus"
+                className="flex min-h-11 items-center gap-2 rounded-xl bg-surface-sunken px-4 text-sm font-bold text-ink focus-visible:outline-3 focus-visible:outline-focus"
                 key={item.label}
                 onClick={() => goTo(item.target)}
                 type="button"
@@ -180,7 +180,7 @@ export function DashboardScreen({
               </button>
             ))}
             <button
-              className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-surface-sunken px-4 text-sm font-bold text-ink focus-visible:outline-3 focus-visible:outline-focus"
+              className="flex min-h-11 items-center gap-2 rounded-xl bg-surface-sunken px-4 text-sm font-bold text-ink focus-visible:outline-3 focus-visible:outline-focus"
               onClick={() => setScreen("settings")}
               type="button"
             >
@@ -405,7 +405,7 @@ export function DashboardScreen({
                     </h2>
                     <button
                       aria-label="More adherence options"
-                      className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-focus"
+                      className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-focus"
                       type="button"
                     >
                       <Icon name="more" />
@@ -459,7 +459,7 @@ export function DashboardScreen({
                       Medicine log
                     </h2>
                     <button
-                      className="min-h-10 rounded-lg px-2 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus"
+                      className="min-h-11 rounded-lg px-2 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus"
                       type="button"
                     >
                       View all

@@ -217,7 +217,7 @@ export function ProfileScreen({
                 </div>
                 {!editingCarer && (
                   <button
-                    className="min-h-10 rounded-lg px-3 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus"
+                    className="min-h-11 rounded-lg px-3 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus"
                     onClick={() => setEditingCarer(true)}
                     type="button"
                   >

@@ -115,7 +115,7 @@ export function CarerPage({
           <header className="border-b border-line bg-surface lg:hidden">
             <div className="flex min-h-20 items-center justify-between px-5">
               <button
-                className="flex items-center gap-3 rounded-xl focus-visible:outline-3 focus-visible:outline-focus"
+                className="flex min-h-11 items-center gap-3 rounded-xl focus-visible:outline-3 focus-visible:outline-focus"
                 onClick={() => goTo("dashboard")}
                 type="button"
               >
@@ -135,12 +135,12 @@ export function CarerPage({
             </div>
             <nav
               aria-label="Main"
-              className="flex gap-2 overflow-x-auto border-t border-line px-4 py-3"
+              className="flex flex-wrap gap-2 border-t border-line px-4 py-3"
             >
               {navItems.map((item) => (
                 <button
                   aria-current={isNavActive(item.target) ? "page" : undefined}
-                  className={`flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-bold ${
+                  className={`flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-bold ${
                     isNavActive(item.target)
                       ? "bg-primary text-on-primary"
                       : "bg-surface-sunken text-ink"

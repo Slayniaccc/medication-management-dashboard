@@ -224,6 +224,20 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /*
+   * The 44px target floor. A min-h or min-w utility still overrides this, so
+   * it catches a control nobody sized rather than one sized too small. Tick
+   * boxes, radio buttons and the file picker are left out because each sits
+   * inside a label that is the target.
+   */
+  button,
+  select,
+  textarea,
+  input:not([type="checkbox"], [type="radio"], [type="file"]) {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
   button {
     cursor: pointer;
   }
