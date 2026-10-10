@@ -190,7 +190,9 @@ Keep this section and Known issues accurate as work lands. They are the only par
 - Persistence has not been exercised in a browser yet: it passes the gate, but nobody has logged a dose, refreshed and seen it still there
 - No tests
 - The dose event model lives in `src/model/` as types and pure functions, and the UI reads and writes through it. `App.tsx` holds medications, schedules and dose events as three pieces of state. Today's doses, the next dose, the medicine log and the due soon and overdue labels are all derived from them and a clock that ticks every 30 seconds
-- The icon set and the shared UI primitives live in `src/components/`: `Icon`, `ToggleRow`, `Toast`, `Dialog` and `MedicationImage`. Every screen, all state and the carer page shell are still in `src/App.tsx`. Buttons, cards and the initials avatars are still written out as class strings where they are used
+- The icon set and the shared UI primitives live in `src/components/`: `Icon`, `ToggleRow`, `Toast`, `Dialog` and `MedicationImage`. Buttons, cards and the initials avatars are still written out as class strings where they are used
+- Each of the ten screens is its own component in `src/screens/`, alongside the carer page shell (`CarerPage`), the two dialogs, and the navigation list and time and reason formatting they share. The dashboard still has its own copy of the navigation rather than using `CarerPage`
+- `src/App.tsx` still holds all state, every handler and the derived values, and hands them to the screens as props. It renders no markup of its own
 - `Dialog` is the shared shell for both dialogs and nothing more: it does not move focus in when it opens, trap focus, close on Escape or return focus when it closes
 - A not-given dose stores its reason as a code, and the medicine log shows it along with the scheduled time, the time it was logged and who logged it
 - Removing a prescription ends its schedules from today and keeps the medication definition, so logged doses still resolve. Nothing in the UI changes a schedule's time yet: "Edit prescription" and both "Remind in 10 min" buttons only show a toast
@@ -208,6 +210,7 @@ Keep this section and Known issues accurate as work lands. They are the only par
 - The app never asks the browser for persistent storage, so the browser may clear the database under storage pressure, and Safari clears it after seven days without a visit unless the app is added to the home screen.
 - A medicine photo is stored at the size it was chosen, as a data URL inside the medication record. Nothing resizes it.
 - The storage notice sits outside the patient view root, so it does not follow Asha's theme or text size.
+- Keyboard focus is dropped on every change of screen. Each screen is now a separate component, so the navigation button that was pressed is removed with the screen it was on, and nothing moves focus to the new one yet. Before the screens were split, focus stayed on the navigation button when moving between the dashboard and the six pages that share its layout. The mobile navigation strip also scrolls back to its start.
 
 ## Still open
 
