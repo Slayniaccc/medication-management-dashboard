@@ -90,7 +90,6 @@ export default function App({
     newDosage,
     newQuantity,
     newTimes,
-    prescriptionIsComplete,
     savePrescription,
     setMedicineImage,
     setNewDosage,
@@ -263,7 +262,6 @@ export default function App({
           newDosage={newDosage}
           newQuantity={newQuantity}
           newTimes={newTimes}
-          prescriptionIsComplete={prescriptionIsComplete}
           savePrescription={savePrescription}
           setMedicineImage={setMedicineImage}
           setNewDosage={setNewDosage}

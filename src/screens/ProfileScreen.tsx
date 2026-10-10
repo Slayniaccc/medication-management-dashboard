@@ -1,4 +1,6 @@
+import { FieldError } from "../components/FieldError";
 import { Icon } from "../components/Icon";
+import { useFormErrors } from "../state/useFormErrors";
 import type { Details } from "../storage/repository";
 import { mainId, viewHeadingId, type Screen } from "./navigation";
 
@@ -48,6 +50,12 @@ export function ProfileScreen({
     simplifiedLayout,
     textSize,
   } = details;
+
+  // The name is the heading of this page and of the carer's card, so it is
+  // the one detail that cannot be left empty.
+  const { checkOnSubmit, errors } = useFormErrors(
+    carerName.trim() ? {} : { "carer-name": "Enter your full name." },
+  );
 
   return (
     <div className="min-h-screen bg-page text-ink">
@@ -220,34 +228,50 @@ export function ProfileScreen({
               {editingCarer ? (
                 <div className="mt-6 space-y-4">
                   {[
-                    ["Full name", carerName, setCarerName, "text"],
-                    ["Phone number", carerPhone, setCarerPhone, "tel"],
-                    ["Email address", carerEmail, setCarerEmail, "email"],
+                    ["carer-name", "Full name", carerName, setCarerName, "text"],
+                    ["carer-phone", "Phone number", carerPhone, setCarerPhone, "tel"],
+                    ["carer-email", "Email address", carerEmail, setCarerEmail, "email"],
                     [
+                      "carer-relationship",
                       "Relationship to patient",
                       carerRelationship,
                       setCarerRelationship,
                       "text",
                     ],
-                    ["Availability", carerAvailability, setCarerAvailability, "text"],
-                  ].map(([label, value, setter, type]) => (
-                    <label className="block" key={label as string}>
-                      <span className="mb-1.5 block text-sm font-bold text-ink-muted">
-                        {label as string}
-                      </span>
-                      <input
-                        className="min-h-12 w-full rounded-xl border-2 border-line-strong px-3 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
-                        onChange={(event) =>
-                          (setter as (value: string) => void)(event.target.value)
-                        }
-                        type={type as string}
-                        value={value as string}
-                      />
-                    </label>
+                    [
+                      "carer-availability",
+                      "Availability",
+                      carerAvailability,
+                      setCarerAvailability,
+                      "text",
+                    ],
+                  ].map(([id, label, value, setter, type]) => (
+                    <div key={id as string}>
+                      <label className="block">
+                        <span className="mb-1.5 block text-sm font-bold text-ink-muted">
+                          {label as string}
+                        </span>
+                        <input
+                          aria-describedby={errors[id as string] ? `${id}-error` : undefined}
+                          aria-invalid={errors[id as string] ? true : undefined}
+                          aria-required={id === "carer-name" ? "true" : undefined}
+                          className="min-h-12 w-full rounded-xl border-2 border-line-strong px-3 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line aria-[invalid=true]:border-danger"
+                          id={id as string}
+                          onChange={(event) =>
+                            (setter as (value: string) => void)(event.target.value)
+                          }
+                          type={type as string}
+                          value={value as string}
+                        />
+                      </label>
+                      <FieldError id={`${id}-error`} message={errors[id as string]} />
+                    </div>
                   ))}
                   <button
                     className="min-h-12 w-full rounded-xl bg-primary px-4 text-sm font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
-                    onClick={() => setEditingCarer(false)}
+                    onClick={() => {
+                      if (checkOnSubmit()) setEditingCarer(false);
+                    }}
                     type="button"
                   >
                     Save changes

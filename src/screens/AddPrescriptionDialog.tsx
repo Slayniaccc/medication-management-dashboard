@@ -1,8 +1,10 @@
 import type { Dispatch, SetStateAction } from "react";
 import { Dialog } from "../components/Dialog";
+import { FieldError } from "../components/FieldError";
 import { Icon } from "../components/Icon";
 import type { TimeOfDay } from "../model/time";
 import type { Medication } from "../model/types";
+import { useFormErrors, type FormErrors } from "../state/useFormErrors";
 import { formatTime } from "./format";
 
 const reminderTimeOptions: TimeOfDay[] = ["08:00", "12:00", "18:00", "21:00"];
@@ -13,7 +15,6 @@ export function AddPrescriptionDialog({
   newDosage,
   newQuantity,
   newTimes,
-  prescriptionIsComplete,
   savePrescription,
   setMedicineImage,
   setNewDosage,
@@ -26,7 +27,6 @@ export function AddPrescriptionDialog({
   newDosage: string;
   newQuantity: string;
   newTimes: string[];
-  prescriptionIsComplete: boolean;
   savePrescription: () => void;
   setMedicineImage: (image: string) => void;
   setNewDosage: (value: string) => void;
@@ -34,6 +34,20 @@ export function AddPrescriptionDialog({
   setNewTimes: Dispatch<SetStateAction<string[]>>;
   setShowAddPrescription: (show: boolean) => void;
 }) {
+  const found: FormErrors = {};
+  if (!newDosage.trim()) found["prescription-dosage"] = "Enter the dosage, for example 20 mg.";
+  if (!newQuantity.trim()) {
+    found["prescription-quantity"] = "Enter the quantity, for example 1 tablet.";
+  }
+  newTimes.forEach((time, index) => {
+    if (time) return;
+    found[`reminder-${index}`] =
+      newTimes.length > 1
+        ? `Choose a time for reminder ${index + 1}, or remove it.`
+        : "Choose a reminder time.";
+  });
+  const { checkOnSubmit, errors } = useFormErrors(found);
+
   return (
     <Dialog
       closeLabel="Close add prescription dialog"
@@ -103,27 +117,48 @@ export function AddPrescriptionDialog({
         </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="mb-2 block text-base font-bold">Dosage</span>
-            <input
-              className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base text-ink outline-none placeholder:text-ink-muted focus:border-accent focus:ring-3 focus:ring-accent-line"
-              onChange={(event) => setNewDosage(event.target.value)}
-              placeholder="For example: 20 mg"
-              type="text"
-              value={newDosage}
-            />
-          </label>
+          <div>
+            <label className="block">
+              <span className="mb-2 block text-base font-bold">Dosage</span>
+              <input
+                aria-describedby={
+                  errors["prescription-dosage"] ? "prescription-dosage-error" : undefined
+                }
+                aria-invalid={errors["prescription-dosage"] ? true : undefined}
+                aria-required="true"
+                className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base text-ink outline-none placeholder:text-ink-muted focus:border-accent focus:ring-3 focus:ring-accent-line aria-[invalid=true]:border-danger"
+                id="prescription-dosage"
+                onChange={(event) => setNewDosage(event.target.value)}
+                placeholder="For example: 20 mg"
+                type="text"
+                value={newDosage}
+              />
+            </label>
+            <FieldError id="prescription-dosage-error" message={errors["prescription-dosage"]} />
+          </div>
 
-          <label className="block">
-            <span className="mb-2 block text-base font-bold">Quantity</span>
-            <input
-              className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base text-ink outline-none placeholder:text-ink-muted focus:border-accent focus:ring-3 focus:ring-accent-line"
-              onChange={(event) => setNewQuantity(event.target.value)}
-              placeholder="For example: 1 tablet"
-              type="text"
-              value={newQuantity}
+          <div>
+            <label className="block">
+              <span className="mb-2 block text-base font-bold">Quantity</span>
+              <input
+                aria-describedby={
+                  errors["prescription-quantity"] ? "prescription-quantity-error" : undefined
+                }
+                aria-invalid={errors["prescription-quantity"] ? true : undefined}
+                aria-required="true"
+                className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base text-ink outline-none placeholder:text-ink-muted focus:border-accent focus:ring-3 focus:ring-accent-line aria-[invalid=true]:border-danger"
+                id="prescription-quantity"
+                onChange={(event) => setNewQuantity(event.target.value)}
+                placeholder="For example: 1 tablet"
+                type="text"
+                value={newQuantity}
+              />
+            </label>
+            <FieldError
+              id="prescription-quantity-error"
+              message={errors["prescription-quantity"]}
             />
-          </label>
+          </div>
         </div>
 
         <fieldset>
@@ -133,43 +168,54 @@ export function AddPrescriptionDialog({
           </p>
           <div className="space-y-3">
             {newTimes.map((reminderTime, index) => (
-              <div className="flex items-center gap-2" key={index}>
-                <label className="sr-only" htmlFor={`reminder-${index}`}>
-                  Reminder time {index + 1}
-                </label>
-                <select
-                  className="min-h-12 min-w-0 flex-1 rounded-xl border-2 border-line-strong bg-surface px-4 text-base text-ink outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
-                  id={`reminder-${index}`}
-                  onChange={(event) =>
-                    setNewTimes((times) =>
-                      times.map((time, timeIndex) =>
-                        timeIndex === index ? event.target.value : time,
-                      ),
-                    )
-                  }
-                  value={reminderTime}
-                >
-                  <option value="">Choose a time</option>
-                  {reminderTimeOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {formatTime(option)}
-                    </option>
-                  ))}
-                </select>
-                {newTimes.length > 1 && (
-                  <button
-                    aria-label={`Remove reminder time ${index + 1}`}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-line-strong text-danger hover:bg-danger-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                    onClick={() =>
+              <div key={index}>
+                <div className="flex items-center gap-2">
+                  <label className="sr-only" htmlFor={`reminder-${index}`}>
+                    Reminder time {index + 1}
+                  </label>
+                  <select
+                    aria-describedby={
+                      errors[`reminder-${index}`] ? `reminder-${index}-error` : undefined
+                    }
+                    aria-invalid={errors[`reminder-${index}`] ? true : undefined}
+                    aria-required="true"
+                    className="min-h-12 min-w-0 flex-1 rounded-xl border-2 border-line-strong bg-surface px-4 text-base text-ink outline-none focus:border-accent focus:ring-3 focus:ring-accent-line aria-[invalid=true]:border-danger"
+                    id={`reminder-${index}`}
+                    onChange={(event) =>
                       setNewTimes((times) =>
-                        times.filter((_, timeIndex) => timeIndex !== index),
+                        times.map((time, timeIndex) =>
+                          timeIndex === index ? event.target.value : time,
+                        ),
                       )
                     }
-                    type="button"
+                    value={reminderTime}
                   >
-                    <Icon name="close" className="h-5 w-5" />
-                  </button>
-                )}
+                    <option value="">Choose a time</option>
+                    {reminderTimeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {formatTime(option)}
+                      </option>
+                    ))}
+                  </select>
+                  {newTimes.length > 1 && (
+                    <button
+                      aria-label={`Remove reminder time ${index + 1}`}
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-line-strong text-danger hover:bg-danger-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                      onClick={() =>
+                        setNewTimes((times) =>
+                          times.filter((_, timeIndex) => timeIndex !== index),
+                        )
+                      }
+                      type="button"
+                    >
+                      <Icon name="close" className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+                <FieldError
+                  id={`reminder-${index}-error`}
+                  message={errors[`reminder-${index}`]}
+                />
               </div>
             ))}
           </div>
@@ -193,9 +239,10 @@ export function AddPrescriptionDialog({
           Cancel
         </button>
         <button
-          className="min-h-12 flex-1 rounded-xl bg-primary px-4 text-sm font-bold text-on-primary enabled:hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
-          disabled={!prescriptionIsComplete}
-          onClick={savePrescription}
+          className="min-h-12 flex-1 rounded-xl bg-primary px-4 text-sm font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
+          onClick={() => {
+            if (checkOnSubmit()) savePrescription();
+          }}
           type="button"
         >
           Add prescription

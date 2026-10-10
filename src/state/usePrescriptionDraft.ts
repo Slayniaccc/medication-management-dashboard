@@ -19,12 +19,6 @@ export function usePrescriptionDraft({
   const [newTimes, setNewTimes] = useState([""]);
   const [medicineImage, setMedicineImage] = useState("");
 
-  const prescriptionIsComplete =
-    Boolean(newDosage) &&
-    Boolean(newQuantity) &&
-    newTimes.length > 0 &&
-    newTimes.every(Boolean);
-
   const savePrescription = () => {
     const times = [...new Set(newTimes.filter(isTimeOfDay))];
     if (!newDosage || !newQuantity || times.length === 0) return;
@@ -46,7 +40,6 @@ export function usePrescriptionDraft({
     newDosage,
     newQuantity,
     newTimes,
-    prescriptionIsComplete,
     savePrescription,
     setMedicineImage,
     setNewDosage,

@@ -403,3 +403,21 @@ The headings and the main landmark show the focus ring only under `:focus-visibl
 **Headings.** Checked by reading every screen: one h1 each, h2 for sections, h3 only on the dashboard's medicine cards and under one h2 on the profile. No level was skipped, so no heading changed level.
 
 **Not done here.** The page title does not change with the view, and the dashboard's mobile navigation still does not mark the current page. The skip link and the announcement sit outside the patient view root, like the storage notice, so the link does not follow Asha's theme or text size. None of this has been run through a screen reader or a browser yet.
+
+---
+
+## 2026-10-10: Forms check on submit, with no disabled save buttons
+
+**Decision.** The four forms (add prescription, not-given reason, patient setup, carer details) keep their save button enabled and check the form when it is pressed. Each field at fault gets a message directly under it in a `role="alert"`, `aria-invalid`, and `aria-describedby` pointing at the message, and focus moves to the first of them. `useFormErrors` takes the errors the form has right now and shows them only after a failed attempt, so a message disappears as soon as its field is put right and nothing has to clear it by hand. The form component owns its field ids, its rules and its messages.
+
+**Alternative.** Keep the disabled buttons and add a hint saying what is missing. Or one error summary at the top of the form, focused on submit, with links to the fields. Or hold the errors in the dialog hooks that `App.tsx` calls, alongside the drafts.
+
+**Why.** A disabled button was the whole of the old error handling, and it says nothing: it is skipped by the Tab key, it cannot be focused to find out why, and the setup one changed its own label instead of saying which field was the problem. Pressing a button and being told what to fix is something Meera can act on when tired and Asha can act on with a screen reader. A summary was rejected because the longest form has five possible errors and the others one or two, so a second copy of the messages is more to read and more to listen to than it saves. Messages under the fields put the direction where the fix is made.
+
+The hook is called from the form rather than from `App.tsx`, which is new: screens held no state before this. The dialogs unmount when they close, so state held in the form resets itself, where state held in `App.tsx` would need clearing on every way out of the dialog. It also keeps eight more props off the screens. The draft values stay where they were.
+
+**Rules.** No rule was invented beyond what the forms already demanded, with one exception. Add prescription and the reason dialog require what their disabled buttons required, and setup requires the consent date and tick. The carer's name is newly required, because it is the `h1` of the profile page and an empty heading is what focus lands on at every visit. Phone, email and age formats are not checked: a wrong rule that refuses a real phone number is worse than none.
+
+**Markup.** The reason options are a `fieldset` with `role="radiogroup"`, because `aria-invalid` and `aria-required` are not supported on a plain group. Messages sit outside each `<label>` so they are not read as part of the field's name. The invalid border uses `aria-[invalid=true]:` so the attribute is the single source of the styling.
+
+**Not done here.** Setup and carer details are stored as typed, so the check stops the form closing rather than stopping the save. Every message is announced at once and the first is then read again on focus. Enter does not submit, because none of the forms is a `<form>` element. The photo field reports no failure. None of this has been run through a screen reader or a browser yet.

@@ -1,6 +1,8 @@
 import type { Dispatch, SetStateAction } from "react";
+import { FieldError } from "../components/FieldError";
 import { Icon } from "../components/Icon";
 import { ToggleRow } from "../components/ToggleRow";
+import { useFormErrors, type FormErrors } from "../state/useFormErrors";
 import type { Details, PatientTheme, TextSize } from "../storage/repository";
 import { mainId, viewHeadingId, type Screen } from "./navigation";
 
@@ -58,6 +60,13 @@ export function SetupScreen({
     simplifiedLayout,
     textSize,
   } = details;
+
+  const found: FormErrors = {};
+  if (!consentDate) found["consent-date"] = "Enter the date consent was recorded.";
+  if (!consentGiven) {
+    found["consent-given"] = "Tick the box to confirm consent before saving the patient setup.";
+  }
+  const { checkOnSubmit, errors } = useFormErrors(found);
 
   return (
     <div className="min-h-screen bg-page text-ink">
@@ -248,27 +257,40 @@ export function SetupScreen({
                     <option>Authorised representative</option>
                   </select>
                 </label>
-                <label className="block">
-                  <span className="mb-2 block font-bold">Date consent recorded</span>
-                  <input
-                    className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
-                    onChange={(event) => setConsentDate(event.target.value)}
-                    type="date"
-                    value={consentDate}
-                  />
-                </label>
+                <div>
+                  <label className="block">
+                    <span className="mb-2 block font-bold">Date consent recorded</span>
+                    <input
+                      aria-describedby={errors["consent-date"] ? "consent-date-error" : undefined}
+                      aria-invalid={errors["consent-date"] ? true : undefined}
+                      aria-required="true"
+                      className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line aria-[invalid=true]:border-danger"
+                      id="consent-date"
+                      onChange={(event) => setConsentDate(event.target.value)}
+                      type="date"
+                      value={consentDate}
+                    />
+                  </label>
+                  <FieldError id="consent-date-error" message={errors["consent-date"]} />
+                </div>
               </div>
 
               <label
                 className={`mt-5 flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 ${
                   consentGiven
                     ? "border-accent bg-accent-subtle"
-                    : "border-line-strong bg-surface"
+                    : errors["consent-given"]
+                      ? "border-danger bg-surface"
+                      : "border-line-strong bg-surface"
                 }`}
               >
                 <input
+                  aria-describedby={errors["consent-given"] ? "consent-given-error" : undefined}
+                  aria-invalid={errors["consent-given"] ? true : undefined}
+                  aria-required="true"
                   checked={consentGiven}
                   className="mt-0.5 h-6 w-6 shrink-0 accent-accent"
+                  id="consent-given"
                   onChange={(event) => setConsentGiven(event.target.checked)}
                   type="checkbox"
                 />
@@ -283,6 +305,7 @@ export function SetupScreen({
                   </span>
                 </span>
               </label>
+              <FieldError id="consent-given-error" message={errors["consent-given"]} />
             </section>
           </div>
 
@@ -400,16 +423,16 @@ export function SetupScreen({
             Preview patient view
           </button>
           <button
-            className="min-h-12 rounded-xl bg-highlight px-6 text-sm font-bold text-on-highlight enabled:hover:bg-on-inverse disabled:cursor-not-allowed disabled:bg-disabled disabled:text-ink-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-on-inverse"
-            disabled={!consentGiven || !consentDate}
+            className="min-h-12 rounded-xl bg-highlight px-6 text-sm font-bold text-on-highlight hover:bg-on-inverse focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-on-inverse"
             onClick={() => {
+              if (!checkOnSubmit()) return;
               setToast("Patient setup saved.");
               setScreen("dashboard");
               window.setTimeout(() => setToast(""), 2800);
             }}
             type="button"
           >
-            {consentGiven ? "Save patient setup" : "Consent required to save"}
+            Save patient setup
           </button>
         </div>
       </main>
