@@ -179,6 +179,9 @@ Stable points:
 
 Honest inventory, so nobody mistakes a placeholder for a bug or a stub for a feature.
 
+Keep this section and Known issues accurate as work lands. They are the only parts of this file that change during normal work.
+
+- The five accessibility settings are mirrored onto the DOM as data attributes, but nothing reads them yet, so the first invariant is only half met
 - Medication data, patient profile, carer details and consent record are seeded in memory and reset on refresh
 - No persistence layer yet
 - No tests
@@ -209,12 +212,13 @@ Honest inventory, so nobody mistakes a placeholder for a bug or a stub for a fea
 
 ## Git
 
-- **One commit per change.** A feature, a fix or a refactor is one commit, however many files it touches. Do not split a single change across commits, and do not bundle unrelated changes into one.
-- **Short imperative subject lines**, under about 60 characters, no full stop. "Wire accessibility toggles to root attributes", not "wired up some toggle stuff and fixed a thing".
-- **No body** unless the reasoning is not visible in the diff. When there is one, it says why, never what.
+- **As few commits as possible.** Group related work into one commit rather than splitting it up. A whole feature area, or the same migration applied across several screens, is one commit. Never commit per file or per screen. Unrelated changes still stay separate.
+- **Short imperative subject line**, under about 60 characters, no full stop. "Wire accessibility toggles to root attributes", not "wired up some toggle stuff and fixed a thing".
+- **Always include a body.** Two to four lines, or a few short bullets, covering what changed and why. Enough that someone reading `git log` a month later understands the commit without opening the diff. It summarises, it does not list files, and it gives the reason wherever the reason is not obvious from the subject.
 - **No trailers of any kind.** No co-author lines, no generated-with footers, no emoji. The history is the author's own work and should read that way.
 - **Never commit a failing gate.** `pnpm check` passes first.
-- **Commit when a unit of work is complete**, without being asked each time. Do not ask whether to commit; do ask before anything that rewrites history or force pushes.
+- **Commit and push when a unit of work is complete**, without being asked each time. Do not ask whether to commit; do ask before anything that rewrites history or force pushes.
+- **Budget.** The project is expected to reach a finished state in roughly thirty commits in total. Size work accordingly: if a task would naturally produce three commits, it is one commit.
 
 ## Verification
 
@@ -232,19 +236,19 @@ A clean gate is not proof of correctness here. The invariants in this file are t
 
 Rules for headless runs (`claude -p`) and any session where nobody is available to answer a question. The file is the only thing holding the line, so it holds it strictly.
 
-- **Stop rather than guess.** Anything touching the data model, the state shape, the component boundaries, the persistence layer, or anything listed under Still open is a conversation. Write down what you would have asked, leave the work undone, and finish the run.
-- **One unit of work per run.** Do not continue into adjacent work because it looked related. Scope creep is unreviewable.
-- **Never** rewrite history, force push, delete branches, or change remote settings.
-- **Never** add or upgrade a dependency.
-- **Never** modify this file or anything under `.claude/`.
+- **Decide, do not stall.** Where a choice is not already settled by this file, make it using the principles here and keep going. The tiebreaker is whichever option better serves Asha and Meera as described above.
+- **Record every decision.** Put the reasoning in the commit body, and append an entry to `docs/DECISIONS.md`: the date, what was chosen, what the alternative was, and why. A decision nobody wrote down costs more later than the minute it saved. This log is the project's reasoning and it is expected to grow.
+- **Flag the significant ones** in the run output, so a choice that is cheap to reverse now gets reviewed while it still is.
+- **Stop only for these:** anything that contradicts an invariant, a product boundary, or a decision already recorded in this file; anything irreversible, meaning rewriting history, force pushing, deleting branches or deleting data; adding or upgrading a dependency.
+- **Do not modify this file**, except the Current state and Known issues sections, which must be kept accurate as work lands. Everything else here, and everything under `.claude/`, is off limits.
 - **If the gate fails** and the fix is not obviously within the scope of the task, revert the working tree rather than committing something broken or patching around it.
-- **Report what was skipped.** A run that did less than asked and said why is a good run. A run that did more than asked is not.
+- **Scope stays where it was set.** Do the task asked, not the adjacent work that looked related.
 
 ## Working agreement
 
 Implementation help is welcome. Judgment is not delegated.
 
-- **Architecture gets discussed before it gets written.** Anything that changes the data model, the state shape, the component boundaries or the persistence layer is a conversation first. Implementing a decision is fine; making one silently is not.
+- **Decisions get recorded, not skipped.** New architectural choices can be made as the work goes, provided the reasoning lands in `docs/DECISIONS.md` and the commit body. Changing a decision already recorded in this file is a conversation first.
 - **Explain the reasoning alongside the change**, not just the result. The trade-off considered and rejected is as useful as the one taken.
 - **Nothing lands unread.** Code that goes in is code the author has read and can explain. Work in pieces small enough for that to be true.
 - **Say when a request conflicts with an invariant or a product boundary**, before doing it rather than after.
