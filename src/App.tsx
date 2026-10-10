@@ -1,4 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Dialog } from "./components/Dialog";
+import { Icon, type IconName } from "./components/Icon";
+import { MedicationImage } from "./components/MedicationImage";
+import { Toast } from "./components/Toast";
+import { ToggleRow } from "./components/ToggleRow";
 import { doseStatus, occurrenceKey, occurrencesOn, recordDose } from "./model/doses";
 import { closeSchedule, isInForce } from "./model/schedules";
 import {
@@ -13,7 +18,6 @@ import type {
   DoseEvent,
   DoseStatus,
   Medication,
-  MedicationColour,
   NotGivenReason,
   OccurrenceKey,
   RecordedBy,
@@ -38,129 +42,6 @@ type Screen =
   | "patient"
   | "settings"
   | "help";
-type IconProps = {
-  name:
-    | "home"
-    | "medication"
-    | "calendar"
-    | "document"
-    | "settings"
-    | "bell"
-    | "plus"
-    | "clock"
-    | "check"
-    | "chevron"
-    | "more"
-    | "help"
-    | "image"
-    | "phone"
-    | "user"
-    | "close";
-  className?: string;
-};
-
-function Icon({ name, className = "h-5 w-5" }: IconProps) {
-  const paths: Record<IconProps["name"], ReactNode> = {
-    home: (
-      <>
-        <path d="m3 11 9-8 9 8" />
-        <path d="M5 10v10h14V10M9 20v-6h6v6" />
-      </>
-    ),
-    medication: (
-      <>
-        <path d="M10.5 5.5 18.5 13a4 4 0 0 1-5.5 5.8L5 11.3a4 4 0 0 1 5.5-5.8Z" />
-        <path d="m8.7 14.8 5.6-6" />
-      </>
-    ),
-    calendar: (
-      <>
-        <rect x="3" y="5" width="18" height="16" rx="2" />
-        <path d="M16 3v4M8 3v4M3 10h18" />
-      </>
-    ),
-    document: (
-      <>
-        <path d="M6 3h9l3 3v15H6Z" />
-        <path d="M14 3v4h4M9 12h6M9 16h6" />
-      </>
-    ),
-    settings: (
-      <>
-        <circle cx="12" cy="12" r="3" />
-        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z" />
-      </>
-    ),
-    bell: (
-      <>
-        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-        <path d="M10 21h4" />
-      </>
-    ),
-    plus: <path d="M12 5v14M5 12h14" />,
-    clock: (
-      <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3 2" />
-      </>
-    ),
-    check: <path d="m5 12 4 4L19 6" />,
-    chevron: <path d="m9 18 6-6-6-6" />,
-    more: (
-      <>
-        <circle cx="5" cy="12" r="1" fill="currentColor" stroke="none" />
-        <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
-        <circle cx="19" cy="12" r="1" fill="currentColor" stroke="none" />
-      </>
-    ),
-    help: (
-      <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M9.8 9a2.3 2.3 0 1 1 3.3 2c-.8.4-1.1.9-1.1 2M12 17h.01" />
-      </>
-    ),
-    image: (
-      <>
-        <rect x="3" y="4" width="18" height="16" rx="2" />
-        <circle cx="9" cy="10" r="2" />
-        <path d="m4 17 5-4 3 3 3-3 5 4" />
-      </>
-    ),
-    phone: (
-      <path d="M5.4 3.5 8.7 3l1.6 4.2-2.1 1.6a15.8 15.8 0 0 0 7 7l1.6-2.1 4.2 1.6-.5 3.3c-.2 1.1-1.1 1.9-2.2 1.9C10.1 20.5 3.5 13.9 3.5 5.7c0-1.1.8-2 1.9-2.2Z" />
-    ),
-    user: (
-      <>
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
-      </>
-    ),
-    close: <path d="m6 6 12 12M18 6 6 18" />,
-  };
-
-  return (
-    <svg
-      aria-hidden="true"
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {paths[name]}
-    </svg>
-  );
-}
-
-// Tailwind only generates classes it can see written out in full.
-const medicationColourClass: Record<MedicationColour, string> = {
-  coral: "bg-med-coral",
-  teal: "bg-med-teal",
-  ochre: "bg-med-ochre",
-  indigo: "bg-med-indigo",
-};
 
 const daysBefore = (at: Date, days: number): LocalDate =>
   localDateOf(new Date(at.getFullYear(), at.getMonth(), at.getDate() - days));
@@ -217,7 +98,7 @@ const unloggedStatusLabel: Partial<Record<DoseStatus, string>> = {
 
 const navItems: Array<{
   label: string;
-  icon: IconProps["name"];
+  icon: IconName;
   target: string;
   active?: boolean;
 }> = [
@@ -229,45 +110,6 @@ const navItems: Array<{
   { label: "Patient setup", icon: "settings", target: "patient-setup" },
   { label: "Patient view", icon: "home", target: "patient-view" },
 ];
-
-function ToggleRow({
-  checked,
-  description,
-  label,
-  onChange,
-}: {
-  checked: boolean;
-  description: string;
-  label: string;
-  onChange: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-5 border-b border-line py-4 last:border-0">
-      <div>
-        <p className="font-bold text-ink">{label}</p>
-        <p className="mt-1 text-sm leading-5 text-ink-muted">{description}</p>
-      </div>
-      <button
-        aria-checked={checked}
-        aria-label={`${label}: ${checked ? "on" : "off"}`}
-        className={`relative h-8 w-14 shrink-0 rounded-full border-2 transition focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-          checked
-            ? "border-accent bg-accent"
-            : "border-line-strong bg-surface-sunken"
-        }`}
-        onClick={onChange}
-        role="switch"
-        type="button"
-      >
-        <span
-          className={`absolute top-1 h-5 w-5 rounded-full bg-surface shadow-sm transition ${
-            checked ? "left-7" : "left-1"
-          }`}
-        />
-      </button>
-    </div>
-  );
-}
 
 const detailsMatch = (a: Details, b: Details) =>
   (Object.keys(a) as Array<keyof Details>).every((field) => a[field] === b[field]);
@@ -693,16 +535,7 @@ export default function App({
           </div>
         </main>
       </div>
-      {toast && (
-        <div
-          aria-live="polite"
-          className="fixed bottom-5 left-1/2 z-50 flex min-h-12 -translate-x-1/2 items-center gap-2 rounded-xl bg-inverse px-5 text-sm font-bold text-on-inverse shadow-xl"
-          role="status"
-        >
-          <Icon name="check" className="h-4 w-4" />
-          {toast}
-        </div>
-      )}
+      <Toast message={toast} />
     </div>
   );
 
@@ -732,19 +565,7 @@ export default function App({
               key={medication.id}
             >
               <div className="flex items-start gap-4">
-                {medication.imageUrl ? (
-                  <img
-                    alt={`${medication.name} packaging`}
-                    className="h-16 w-16 rounded-xl border border-line-strong object-cover"
-                    src={medication.imageUrl}
-                  />
-                ) : (
-                  <span
-                    className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-xl ${medicationColourClass[medication.colour]} text-on-med`}
-                  >
-                    <Icon name="medication" className="h-7 w-7" />
-                  </span>
-                )}
+                <MedicationImage medication={medication} size="large" />
                 <div className="min-w-0">
                   <h2 className="text-xl font-bold">{medication.name}</h2>
                   <p className="mt-1 font-bold text-ink-soft">
@@ -2155,20 +1976,7 @@ export default function App({
                     >
                       <div className="flex flex-col gap-5 md:flex-row md:items-center">
                         <div className="flex min-w-0 flex-1 items-start gap-4">
-                          {medication.imageUrl ? (
-                            <img
-                              alt={`${medication.name} packaging`}
-                              className="mt-1 h-12 w-12 shrink-0 rounded-xl border border-line-strong object-cover"
-                              src={medication.imageUrl}
-                            />
-                          ) : (
-                            <div
-                              aria-hidden="true"
-                              className={`mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${medicationColourClass[medication.colour]} text-on-med`}
-                            >
-                              <Icon name="medication" className="h-6 w-6" />
-                            </div>
-                          )}
+                          <MedicationImage className="mt-1" medication={medication} size="small" />
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <h3 className="text-lg font-bold">{medication.name}</h3>
@@ -2442,35 +2250,25 @@ export default function App({
       </div>
 
       {showAddPrescription && (
-        <div
-          aria-labelledby="prescription-title"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/55 p-4"
-          role="dialog"
+        <Dialog
+          closeLabel="Close add prescription dialog"
+          header={
+            <>
+              <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
+                Manage prescriptions
+              </p>
+              <h2 id="prescription-title" className="mt-1 text-2xl font-bold">
+                Add a new prescription
+              </h2>
+              <p className="mt-2 text-base text-ink-muted">
+                The prescription will be added as Medicine {medications.length + 1}.
+              </p>
+            </>
+          }
+          labelledBy="prescription-title"
+          onClose={() => setShowAddPrescription(false)}
+          width="wide"
         >
-          <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-surface p-6 shadow-2xl md:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
-                  Manage prescriptions
-                </p>
-                <h2 id="prescription-title" className="mt-1 text-2xl font-bold">
-                  Add a new prescription
-                </h2>
-                <p className="mt-2 text-base text-ink-muted">
-                  The prescription will be added as Medicine {medications.length + 1}.
-                </p>
-              </div>
-              <button
-                aria-label="Close add prescription dialog"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-focus"
-                onClick={() => setShowAddPrescription(false)}
-                type="button"
-              >
-                <Icon name="close" />
-              </button>
-            </div>
-
             <div className="mt-6 space-y-5">
               <label className="block">
                 <span className="mb-2 block text-base font-bold">
@@ -2618,38 +2416,28 @@ export default function App({
                 Add prescription
               </button>
             </div>
-          </div>
-        </div>
+        </Dialog>
       )}
 
       {reasonFor !== null && (
-        <div
-          aria-labelledby="reason-title"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/55 p-4"
-          role="dialog"
+        <Dialog
+          closeLabel="Close"
+          header={
+            <>
+              <p className="text-sm font-bold text-not-given">Dose not given</p>
+              <h2 id="reason-title" className="mt-1 text-2xl font-bold">
+                Why was this dose not given?
+              </h2>
+              <p className="mt-2 text-base leading-6 text-ink-muted">
+                Record what happened when you offered this medicine to {patientName}.
+                This information will be added to the patient’s care log.
+              </p>
+            </>
+          }
+          labelledBy="reason-title"
+          onClose={() => setReasonFor(null)}
+          width="narrow"
         >
-          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl md:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-bold text-not-given">Dose not given</p>
-                <h2 id="reason-title" className="mt-1 text-2xl font-bold">
-                  Why was this dose not given?
-                </h2>
-                <p className="mt-2 text-base leading-6 text-ink-muted">
-                  Record what happened when you offered this medicine to {patientName}.
-                  This information will be added to the patient’s care log.
-                </p>
-              </div>
-              <button
-                aria-label="Close"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-focus"
-                onClick={() => setReasonFor(null)}
-                type="button"
-              >
-                <Icon name="close" />
-              </button>
-            </div>
             <fieldset className="mt-6 space-y-3">
               <legend className="sr-only">
                 Reason the dose was not given to {patientName}
@@ -2692,20 +2480,10 @@ export default function App({
                 Save to care log
               </button>
             </div>
-          </div>
-        </div>
+        </Dialog>
       )}
 
-      {toast && (
-        <div
-          aria-live="polite"
-          className="fixed bottom-5 left-1/2 z-50 flex min-h-12 -translate-x-1/2 items-center gap-2 rounded-xl bg-inverse px-5 text-sm font-bold text-on-inverse shadow-xl"
-          role="status"
-        >
-          <Icon name="check" className="h-4 w-4" />
-          {toast}
-        </div>
-      )}
+      <Toast message={toast} />
     </div>
   );
 }

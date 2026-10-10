@@ -190,6 +190,8 @@ Keep this section and Known issues accurate as work lands. They are the only par
 - Persistence has not been exercised in a browser yet: it passes the gate, but nobody has logged a dose, refreshed and seen it still there
 - No tests
 - The dose event model lives in `src/model/` as types and pure functions, and the UI reads and writes through it. `App.tsx` holds medications, schedules and dose events as three pieces of state. Today's doses, the next dose, the medicine log and the due soon and overdue labels are all derived from them and a clock that ticks every 30 seconds
+- The icon set and the shared UI primitives live in `src/components/`: `Icon`, `ToggleRow`, `Toast`, `Dialog` and `MedicationImage`. Every screen, all state and the carer page shell are still in `src/App.tsx`. Buttons, cards and the initials avatars are still written out as class strings where they are used
+- `Dialog` is the shared shell for both dialogs and nothing more: it does not move focus in when it opens, trap focus, close on Escape or return focus when it closes
 - A not-given dose stores its reason as a code, and the medicine log shows it along with the scheduled time, the time it was logged and who logged it
 - Removing a prescription ends its schedules from today and keeps the medication definition, so logged doses still resolve. Nothing in the UI changes a schedule's time yet: "Edit prescription" and both "Remind in 10 min" buttons only show a toast
 - A logged dose cannot be changed or undone from the UI. That waits on the correction decision under Still open

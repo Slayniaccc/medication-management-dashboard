@@ -347,3 +347,15 @@ Format for each entry: date, the decision as a statement, the alternative that w
 **Alternative.** Keep using `URL.createObjectURL`, or store the file as a Blob and make an object URL each time the app loads.
 
 **Why.** An object URL points at the memory of the page that made it, so once medications are persisted it would be a broken image after every refresh. A data URL is a plain string, so the record is self-contained and the `<img>` needs no change. A Blob would be smaller in storage but needs URLs created and revoked around every render of the image. The photo is not resized, which is listed under Known issues.
+
+---
+
+## 2026-10-10: Shared primitives are the markup that was already duplicated, and no more
+
+**Decision.** `src/components/` holds five modules: `Icon`, `ToggleRow`, `Toast`, `Dialog` and `MedicationImage`. The first two were already components. The other three were the same markup written out twice in `App.tsx`: the toast, the dialog backdrop, panel and close button, and the medicine photo with its colour fallback. One component per file, named exports, no barrel file.
+
+**Alternative.** Also extract `Button`, `Card` and `Avatar` primitives from the class strings repeated across the screens.
+
+**Why.** The three that were extracted each had two copies that had to stay in step, and the dialog shell is where focus handling will have to go, so one copy is worth having before that work. Buttons and cards are different: there are about a dozen button class strings that differ in height, border weight and focus ring colour, and choosing variants for them is a design decision about which differences are intended, not a move. Doing it here would change how screens render inside a commit that is meant to change nothing. The avatars appear three times with three different colour pairs, which is not yet a pattern. The carer page shell stays in `App.tsx` because it closes over navigation state and belongs with the screen extraction.
+
+The two medicine tiles were not quite identical: one fallback was a `div` with `aria-hidden` and the other a `span` without, and one photo had `shrink-0` and the other did not. `MedicationImage` uses a `span`, `aria-hidden` and `shrink-0` for both. The icon inside was already hidden from assistive technology, so nothing announced changes.
