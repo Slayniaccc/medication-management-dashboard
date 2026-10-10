@@ -371,3 +371,17 @@ The two medicine tiles were not quite identical: one fallback was a `div` with `
 **Why.** The long prop lists are temporary: moving state into hooks or a context is the next piece of work and removes them. Reshaping state here would have mixed a behaviour change into a move, and a move is only easy to check if it is nothing else. Every line of the old `App.tsx` other than imports and the wrapper calls is present unchanged in the new files.
 
 The cost is real and is listed under Known issues. While everything was one component, React kept the navigation buttons in place between the dashboard and the six pages that share its layout, so keyboard focus stayed on the button that was pressed. Separate components are replaced whole, so focus is now dropped on every change of screen. Keeping `CarerPage` in `App.tsx` would have preserved it between the six carer pages but not to or from the dashboard, at the price of each screen's title living away from the screen. The old behaviour was not the right one either: the invariant is that focus moves to the new view's heading and the change is announced, which no screen does yet. That work fixes this properly, so the split was not bent around a behaviour that is about to be replaced.
+
+---
+
+## 2026-10-10: State lives in hooks that App.tsx composes, not in a context provider
+
+**Decision.** `src/state/` holds eight hooks, one per kind of state: `useDetails` (patient, carer, consent and every setting), `useRoutine` (medications, schedules, dose events and everything derived from them), `useNavigation`, `useClock`, `useToast`, `usePrescriptionDraft`, `useNotGivenReason` and `useReadAloud`. `App.tsx` calls them, joins them up and passes the results to the screens as the same props as before. No screen file changed.
+
+**Alternative.** A context provider that every screen reads from directly, which would remove the prop lists. Or one `useAppState` hook holding everything.
+
+**Why.** Props only travel one level here, from `App` to a screen, so a context would not remove any drilling. It would remove typing at the cost of hiding what each screen depends on. With props, a screen's signature is the full list of what it reads and what it can change, which is what makes a screen checkable by reading it and is what tests will want. A single hook would have been the old `App.tsx` under a new name. Split by kind, the two hooks that write to the repository are easy to point at, and the dialog drafts that are deliberately not kept are visibly separate from the state that is.
+
+The earlier entry on screen extraction said this work would remove the long prop lists. It does not, and that is a choice rather than an oversight. If they become a real cost, the hooks can sit behind a provider without changing them.
+
+Three things moved rather than being copied. The save and toast calls that `App.tsx` made around each action now happen inside the hook that owns the action, so `useRoutine` takes `flashToast` and `onSaveFailed`. The table mapping navigation targets to screens was written out twice and is now one constant. `saveNotGiven` and `savePrescription` were each split in two: the dialog hook checks and clears the draft, and `useRoutine` builds and stores the record. The twenty-two detail fields are still twenty-two pieces of state, because the screens call their setters with updater functions and folding them into one record would have meant editing every screen.
