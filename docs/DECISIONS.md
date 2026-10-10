@@ -287,3 +287,63 @@ Format for each entry: date, the decision as a statement, the alternative that w
 **Alternative.** A counter, or `Date.now()` as before.
 
 **Why.** It is built into the browser, so no dependency, and it does not collide or leak a timestamp. It needs a secure context, which localhost and any HTTPS host are. Generating outside the updater keeps the updater pure, so React running it twice in development cannot create two ids.
+
+---
+
+## 2026-10-10: Everything is read before the first render, and each change is written as it is made
+
+**Decision.** `main.tsx` opens the repository and loads a snapshot before React renders anything, then passes both to `App`. After that the repository is only written to: one call per thing the carer did, such as `recordDose` or `addPrescription`, each resolving when its transaction completes.
+
+**Alternative.** Render immediately with empty state and fill it in from an effect, or write the whole state back whenever anything changes.
+
+**Why.** Rendering first means a moment where the dashboard shows no doses, or the default theme instead of Asha's high contrast one, before the stored values arrive. Reading a local database takes milliseconds, so waiting costs nothing visible and removes the loading state and the risk of an early write overwriting stored data with defaults. Writing per change keeps the interface shaped like the things a server would also accept, and means a dose event is one row put at its key rather than the whole log rewritten.
+
+---
+
+## 2026-10-10: The dose event store is keyed on the occurrence, and a medication is written with its schedules
+
+**Decision.** The IndexedDB store for dose events uses the compound key date, time of day, medication id. Adding a prescription writes the medication and its schedules in one transaction.
+
+**Alternative.** A generated key with the occurrence checked in code, and separate writes for the medication and each schedule.
+
+**Why.** The occurrence key already makes logging idempotent in the model, and using it as the storage key makes the database enforce the same thing instead of trusting every caller. A medication stored without its schedules would exist but appear nowhere, so the two succeed or fail together.
+
+---
+
+## 2026-10-10: Profile, carer, consent and settings are one stored record
+
+**Decision.** Everything that is not a medication, a schedule or a dose event is a single `Details` record. `App` compares it with what was last stored after each render and writes it when it differs. Reading merges the stored record over the defaults.
+
+**Alternative.** A store or a record each for patient, carer, consent, accessibility settings and reminder preferences, written by each form.
+
+**Why.** These are twenty-two independent fields held as separate pieces of state, edited in place with no save button on most of them. One record and one comparison persists all of them without touching every input, and cannot miss a field added later. Merging over defaults means a new field needs no migration. The cost is that the consent record is not separable from a theme choice in storage. That is acceptable while nothing reads them apart, and splitting it later is a change inside the repository.
+
+---
+
+## 2026-10-10: Demo data is seeded once, when the database is created
+
+**Decision.** The three medicines, their schedules, two days of events and the Asha and Meera details are written in the same upgrade transaction that creates the stores.
+
+**Alternative.** Seed whenever the stores are found empty, or ship with no data.
+
+**Why.** Seeding on empty would bring the demo medicines back if every prescription were removed. Tying it to creation means it happens exactly once and cannot half-happen. Starting empty is the right end state, but the app has no first-run experience or empty states yet, so an empty database today would be a set of blank screens.
+
+---
+
+## 2026-10-10: When the database cannot be opened the app runs in memory and says so
+
+**Decision.** If IndexedDB is missing or refuses to open, an in-memory repository is used for the visit, and a notice above every screen says that nothing changed will be kept. The same notice appears if a later write fails.
+
+**Alternative.** Show an error instead of the app, or carry on silently.
+
+**Why.** Meera can still read today's routine from a browser that will not store anything, which is better than a blank page. Carrying on silently is the worst option: she logs a dose, the screen agrees, and it is gone on the next visit. The notice lives in `main.tsx` rather than in `App` because the app has five separate screen roots and the notice has to be on all of them.
+
+---
+
+## 2026-10-10: A medicine photo is stored as a data URL
+
+**Decision.** The photo chosen when adding a prescription is read with `FileReader` and kept in the medication record as a data URL.
+
+**Alternative.** Keep using `URL.createObjectURL`, or store the file as a Blob and make an object URL each time the app loads.
+
+**Why.** An object URL points at the memory of the page that made it, so once medications are persisted it would be a broken image after every refresh. A data URL is a plain string, so the record is self-contained and the `<img>` needs no change. A Blob would be smaller in storage but needs URLs created and revoked around every render of the image. The photo is not resized, which is listed under Known issues.

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { doseStatus, occurrenceKey, occurrencesOn, recordDose } from "./model/doses";
 import { closeSchedule, isInForce } from "./model/schedules";
 import {
@@ -19,6 +19,13 @@ import type {
   RecordedBy,
   Schedule,
 } from "./model/types";
+import type {
+  Details,
+  PatientTheme,
+  Repository,
+  Snapshot,
+  TextSize,
+} from "./storage/repository";
 
 type Screen =
   | "dashboard"
@@ -31,8 +38,6 @@ type Screen =
   | "patient"
   | "settings"
   | "help";
-type PatientTheme = "light" | "high-contrast" | "dark";
-type TextSize = "standard" | "large" | "extra-large";
 type IconProps = {
   name:
     | "home"
@@ -157,108 +162,8 @@ const medicationColourClass: Record<MedicationColour, string> = {
   indigo: "bg-med-indigo",
 };
 
-const initialMedications: Medication[] = [
-  {
-    id: "medicine-1",
-    name: "Medicine 1",
-    purpose: "Blood pressure",
-    strength: "10 mg",
-    form: "1 tablet",
-    instructions: "Take with a full glass of water",
-    carerNotes: "",
-    colour: "coral",
-  },
-  {
-    id: "medicine-2",
-    name: "Medicine 2",
-    purpose: "Blood sugar",
-    strength: "500 mg",
-    form: "1 tablet",
-    instructions: "Take with breakfast",
-    carerNotes: "",
-    colour: "teal",
-  },
-  {
-    id: "medicine-3",
-    name: "Medicine 3",
-    purpose: "Daily supplement",
-    strength: "1,000 IU",
-    form: "1 capsule",
-    instructions: "Take with food",
-    carerNotes: "",
-    colour: "ochre",
-  },
-];
-
-const initialSchedules: Schedule[] = [
-  {
-    id: "schedule-1",
-    medicationId: "medicine-1",
-    timeOfDay: "08:00",
-    startDate: "2026-01-01",
-    endDate: null,
-  },
-  {
-    id: "schedule-2",
-    medicationId: "medicine-2",
-    timeOfDay: "08:30",
-    startDate: "2026-01-01",
-    endDate: null,
-  },
-  {
-    id: "schedule-3",
-    medicationId: "medicine-3",
-    timeOfDay: "13:00",
-    startDate: "2026-01-01",
-    endDate: null,
-  },
-];
-
 const daysBefore = (at: Date, days: number): LocalDate =>
   localDateOf(new Date(at.getFullYear(), at.getMonth(), at.getDate() - days));
-
-// The two days before today, so the medicine log has history to show. Seeded
-// relative to now because nothing is persisted yet.
-function seedEvents(now: Date): DoseEvent[] {
-  const yesterday = daysBefore(now, 1);
-  const dayBefore = daysBefore(now, 2);
-  const loggedAt = (date: LocalDate, time: TimeOfDay) => toInstant(wallClockDate(date, time));
-  return [
-    {
-      medicationId: "medicine-1",
-      date: dayBefore,
-      timeOfDay: "08:00",
-      outcome: "given",
-      recordedAt: loggedAt(dayBefore, "08:02"),
-      recordedBy: "carer",
-    },
-    {
-      medicationId: "medicine-3",
-      date: dayBefore,
-      timeOfDay: "13:00",
-      outcome: "not-given",
-      reason: "refused",
-      recordedAt: loggedAt(dayBefore, "13:00"),
-      recordedBy: "carer",
-    },
-    {
-      medicationId: "medicine-1",
-      date: yesterday,
-      timeOfDay: "08:00",
-      outcome: "given",
-      recordedAt: loggedAt(yesterday, "08:04"),
-      recordedBy: "carer",
-    },
-    {
-      medicationId: "medicine-2",
-      date: yesterday,
-      timeOfDay: "08:30",
-      outcome: "given",
-      recordedAt: loggedAt(yesterday, "08:32"),
-      recordedBy: "carer",
-    },
-  ];
-}
 
 function clockParts(hours: number, minutes: number) {
   return {
@@ -364,52 +269,98 @@ function ToggleRow({
   );
 }
 
-export default function App() {
+const detailsMatch = (a: Details, b: Details) =>
+  (Object.keys(a) as Array<keyof Details>).every((field) => a[field] === b[field]);
+
+export default function App({
+  initial,
+  onSaveFailed,
+  repository,
+}: {
+  initial: Snapshot;
+  onSaveFailed: () => void;
+  repository: Repository;
+}) {
   const [screen, setScreen] = useState<Screen>("dashboard");
-  const [medications, setMedications] = useState(initialMedications);
-  const [schedules, setSchedules] = useState(initialSchedules);
-  const [events, setEvents] = useState(() => seedEvents(new Date()));
+  const [medications, setMedications] = useState(initial.medications);
+  const [schedules, setSchedules] = useState(initial.schedules);
+  const [events, setEvents] = useState(initial.events);
   const [now, setNow] = useState(() => new Date());
   const [reasonFor, setReasonFor] = useState<{
     dose: OccurrenceKey;
     recordedBy: RecordedBy;
   } | null>(null);
   const [reason, setReason] = useState<NotGivenReason | "">("");
-  const [reminderOn, setReminderOn] = useState(true);
+  const [reminderOn, setReminderOn] = useState(initial.details.reminderOn);
   const [toast, setToast] = useState("");
   const [showAddPrescription, setShowAddPrescription] = useState(false);
   const [newDosage, setNewDosage] = useState("");
   const [newQuantity, setNewQuantity] = useState("");
   const [newTimes, setNewTimes] = useState([""]);
   const [medicineImage, setMedicineImage] = useState("");
-  const [patientName, setPatientName] = useState("Asha");
-  const [patientAge, setPatientAge] = useState("63");
-  const [carerName, setCarerName] = useState("Meera");
-  const [carerPhone, setCarerPhone] = useState("07123 456 789");
-  const [carerEmail, setCarerEmail] = useState("meera@example.com");
-  const [carerRelationship, setCarerRelationship] = useState("Family carer");
-  const [carerAvailability, setCarerAvailability] = useState(
-    "Primary daytime contact",
-  );
+  const [patientName, setPatientName] = useState(initial.details.patientName);
+  const [patientAge, setPatientAge] = useState(initial.details.patientAge);
+  const [carerName, setCarerName] = useState(initial.details.carerName);
+  const [carerPhone, setCarerPhone] = useState(initial.details.carerPhone);
+  const [carerEmail, setCarerEmail] = useState(initial.details.carerEmail);
+  const [carerRelationship, setCarerRelationship] = useState(initial.details.carerRelationship);
+  const [carerAvailability, setCarerAvailability] = useState(initial.details.carerAvailability);
   const [editingCarer, setEditingCarer] = useState(false);
-  const [disabilities, setDisabilities] = useState(
-    "Reduced vision and difficulty distinguishing some colours",
+  const [disabilities, setDisabilities] = useState(initial.details.disabilities);
+  const [medicalNeeds, setMedicalNeeds] = useState(initial.details.medicalNeeds);
+  const [readAloud, setReadAloud] = useState(initial.details.readAloud);
+  const [patientTheme, setPatientTheme] = useState<PatientTheme>(initial.details.patientTheme);
+  const [textSize, setTextSize] = useState<TextSize>(initial.details.textSize);
+  const [colourSafe, setColourSafe] = useState(initial.details.colourSafe);
+  const [reducedMotion, setReducedMotion] = useState(initial.details.reducedMotion);
+  const [simplifiedLayout, setSimplifiedLayout] = useState(initial.details.simplifiedLayout);
+  const [allowMedicineChanges, setAllowMedicineChanges] = useState(
+    initial.details.allowMedicineChanges,
   );
-  const [medicalNeeds, setMedicalNeeds] = useState(
-    "Blood pressure monitoring and blood sugar support",
-  );
-  const [readAloud, setReadAloud] = useState(true);
-  const [patientTheme, setPatientTheme] = useState<PatientTheme>("high-contrast");
-  const [textSize, setTextSize] = useState<TextSize>("large");
-  const [colourSafe, setColourSafe] = useState(true);
-  const [reducedMotion, setReducedMotion] = useState(true);
-  const [simplifiedLayout, setSimplifiedLayout] = useState(true);
-  const [allowMedicineChanges, setAllowMedicineChanges] = useState(false);
-  const [consentGiven, setConsentGiven] = useState(false);
-  const [consentMethod, setConsentMethod] = useState("Confirmed directly by patient");
-  const [consentDate, setConsentDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [emailUpdates, setEmailUpdates] = useState(true);
-  const [soundAlerts, setSoundAlerts] = useState(true);
+  const [consentGiven, setConsentGiven] = useState(initial.details.consentGiven);
+  const [consentMethod, setConsentMethod] = useState(initial.details.consentMethod);
+  const [consentDate, setConsentDate] = useState(initial.details.consentDate);
+  const [emailUpdates, setEmailUpdates] = useState(initial.details.emailUpdates);
+  const [soundAlerts, setSoundAlerts] = useState(initial.details.soundAlerts);
+
+  // A write that fails must not pass silently, because the screen already
+  // shows the change as made.
+  const save = (write: Promise<void>) => {
+    write.catch(onSaveFailed);
+  };
+
+  // The details are many small fields edited in place, so they are stored as
+  // one record whenever any of them differs from what was last stored.
+  const details: Details = {
+    patientName,
+    patientAge,
+    disabilities,
+    medicalNeeds,
+    carerName,
+    carerPhone,
+    carerEmail,
+    carerRelationship,
+    carerAvailability,
+    consentGiven,
+    consentMethod,
+    consentDate,
+    allowMedicineChanges,
+    readAloud,
+    patientTheme,
+    textSize,
+    colourSafe,
+    reducedMotion,
+    simplifiedLayout,
+    reminderOn,
+    emailUpdates,
+    soundAlerts,
+  };
+  const storedDetails = useRef(initial.details);
+  useEffect(() => {
+    if (detailsMatch(storedDetails.current, details)) return;
+    storedDetails.current = details;
+    save(repository.saveDetails(details));
+  });
 
   useEffect(() => {
     document.documentElement.toggleAttribute("data-reduced-motion", reducedMotion);
@@ -475,10 +426,16 @@ export default function App() {
       .toUpperCase() || "P";
 
   const markGiven = ({ medicationId, date, timeOfDay }: OccurrenceKey, recordedBy: RecordedBy) => {
-    const recordedAt = toInstant(new Date());
-    setEvents((items) =>
-      recordDose(items, { medicationId, date, timeOfDay, outcome: "given", recordedAt, recordedBy }),
-    );
+    const event: DoseEvent = {
+      medicationId,
+      date,
+      timeOfDay,
+      outcome: "given",
+      recordedAt: toInstant(new Date()),
+      recordedBy,
+    };
+    setEvents((items) => recordDose(items, event));
+    save(repository.recordDose(event));
     setToast("Dose logged as given.");
     window.setTimeout(() => setToast(""), 2800);
   };
@@ -486,18 +443,17 @@ export default function App() {
   const saveNotGiven = () => {
     if (!reasonFor || !reason) return;
     const { medicationId, date, timeOfDay } = reasonFor.dose;
-    const recordedAt = toInstant(new Date());
-    setEvents((items) =>
-      recordDose(items, {
-        medicationId,
-        date,
-        timeOfDay,
-        outcome: "not-given",
-        reason,
-        recordedAt,
-        recordedBy: reasonFor.recordedBy,
-      }),
-    );
+    const event: DoseEvent = {
+      medicationId,
+      date,
+      timeOfDay,
+      outcome: "not-given",
+      reason,
+      recordedAt: toInstant(new Date()),
+      recordedBy: reasonFor.recordedBy,
+    };
+    setEvents((items) => recordDose(items, event));
+    save(repository.recordDose(event));
     setReasonFor(null);
     setReason("");
     setToast("Not-given dose and reason saved.");
@@ -507,19 +463,20 @@ export default function App() {
   // Ends the medicine's schedules from today rather than deleting anything, so
   // doses already logged against it keep resolving.
   const removePrescription = (medicationId: string) => {
-    setSchedules((items) =>
-      items
-        .filter((schedule) => schedule.medicationId === medicationId && schedule.endDate === null)
-        .reduce(
-          (result, schedule) =>
-            closeSchedule(
-              result,
-              schedule.id,
-              schedule.startDate > today ? schedule.startDate : today,
-            ),
-          items,
-        ),
-    );
+    const closed = schedules
+      .filter((schedule) => schedule.medicationId === medicationId && schedule.endDate === null)
+      .reduce(
+        (result, schedule) =>
+          closeSchedule(
+            result,
+            schedule.id,
+            schedule.startDate > today ? schedule.startDate : today,
+          ),
+        schedules,
+      );
+    setSchedules(closed);
+    // closeSchedule leaves untouched schedules as the same objects.
+    save(repository.saveSchedules(closed.filter((schedule) => !schedules.includes(schedule))));
   };
 
   const goTo = (target: string) => {
@@ -548,21 +505,20 @@ export default function App() {
       startDate: today,
       endDate: null,
     }));
-    setMedications((items) => [
-      ...items,
-      {
-        id: medicationId,
-        name: `Medicine ${items.length + 1}`,
-        purpose: "New prescription",
-        strength: newDosage,
-        form: newQuantity,
-        instructions: "",
-        carerNotes: "",
-        colour: "indigo",
-        imageUrl: medicineImage || undefined,
-      },
-    ]);
+    const medication: Medication = {
+      id: medicationId,
+      name: `Medicine ${medications.length + 1}`,
+      purpose: "New prescription",
+      strength: newDosage,
+      form: newQuantity,
+      instructions: "",
+      carerNotes: "",
+      colour: "indigo",
+      imageUrl: medicineImage || undefined,
+    };
+    setMedications((items) => [...items, medication]);
     setSchedules((items) => [...items, ...added]);
+    save(repository.addPrescription(medication, added));
     setShowAddPrescription(false);
     setNewDosage("");
     setNewQuantity("");
@@ -2526,7 +2482,12 @@ export default function App() {
                     className="sr-only"
                     onChange={(event) => {
                       const file = event.target.files?.[0];
-                      if (file) setMedicineImage(URL.createObjectURL(file));
+                      if (!file) return;
+                      // Read into the record itself. An object URL only points at
+                      // this page's memory and would be dead after a refresh.
+                      const reader = new FileReader();
+                      reader.onload = () => setMedicineImage(String(reader.result));
+                      reader.readAsDataURL(file);
                     }}
                     type="file"
                   />

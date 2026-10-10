@@ -184,8 +184,10 @@ Keep this section and Known issues accurate as work lands. They are the only par
 - The five accessibility settings drive the rendered output. Theme, text size, colour-safe and simplified layout are attributes on the patient view root, read by the semantic tokens and the `simplified` variant in `src/index.css`. Reduced motion is an attribute on `<html>`
 - Every screen uses the semantic colour tokens. The high-contrast, dark and colour-safe token values have not been measured for contrast or checked in a browser yet
 - The codebase has never been run through `pnpm format`. Running it restyles every file, so it has been left alone until that is done as its own change
-- Medications, schedules, dose events, patient profile, carer details and consent record are seeded in memory and reset on refresh. The seeded dose events are the two days before today
-- No persistence layer yet
+- Medications, schedules, dose events, patient profile, carer details, consent record and every setting are kept in IndexedDB and survive a refresh. Form drafts, the current screen and open dialogs are not kept
+- All persistence goes through the `Repository` interface in `src/storage/`. `src/main.tsx` opens it and reads everything before the first render, and `App.tsx` receives the repository and the loaded data as props. There are two implementations: IndexedDB, and an in-memory one used when the browser will not open a database, in which case a notice above every screen says nothing is being saved
+- The demo data is written once, when the database is first created. The seeded dose events are the two days before that first open. There is no way to reset or export the data from the UI
+- Persistence has not been exercised in a browser yet: it passes the gate, but nobody has logged a dose, refreshed and seen it still there
 - No tests
 - The dose event model lives in `src/model/` as types and pure functions, and the UI reads and writes through it. `App.tsx` holds medications, schedules and dose events as three pieces of state. Today's doses, the next dose, the medicine log and the due soon and overdue labels are all derived from them and a clock that ticks every 30 seconds
 - A not-given dose stores its reason as a code, and the medicine log shows it along with the scheduled time, the time it was logged and who logged it
@@ -200,6 +202,10 @@ Keep this section and Known issues accurate as work lands. They are the only par
 - A prescription added part way through the day shows that day's earlier reminder times as overdue, because a schedule starts on a date rather than at a moment.
 - The dashboard still contains a block with `className="hidden"` holding hardcoded adherence figures and log rows from the export. It is never displayed.
 - The reason dialog words "carer unable" in the first person, and the same sentence is shown in the log whoever reads it.
+- Two tabs open at once each hold their own copy of the state. Both write to the same database, but neither sees the other's changes until it is refreshed.
+- The app never asks the browser for persistent storage, so the browser may clear the database under storage pressure, and Safari clears it after seven days without a visit unless the app is added to the home screen.
+- A medicine photo is stored at the size it was chosen, as a data URL inside the medication record. Nothing resizes it.
+- The storage notice sits outside the patient view root, so it does not follow Asha's theme or text size.
 
 ## Still open
 
