@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 type DoseStatus = "pending" | "taken" | "missed";
 type Screen =
@@ -275,6 +275,16 @@ export default function App() {
   const [consentDate, setConsentDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [emailUpdates, setEmailUpdates] = useState(true);
   const [soundAlerts, setSoundAlerts] = useState(true);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = patientTheme;
+    root.dataset.textSize = textSize;
+    root.dataset.colourSafe = String(colourSafe);
+    root.dataset.reducedMotion = String(reducedMotion);
+    root.dataset.simplifiedLayout = String(simplifiedLayout);
+  }, [patientTheme, textSize, colourSafe, reducedMotion, simplifiedLayout]);
+
   const prescriptionIsComplete =
     Boolean(newDosage) &&
     Boolean(newQuantity) &&
