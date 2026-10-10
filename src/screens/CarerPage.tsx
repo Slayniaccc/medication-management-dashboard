@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Icon } from "../components/Icon";
 import { Toast } from "../components/Toast";
-import { navItems, type Screen } from "./navigation";
+import { mainId, navItems, viewHeadingId, type Screen } from "./navigation";
 
 // What the shell needs from the app. Each carer screen is handed this as one
 // prop and passes it straight on.
@@ -38,7 +38,10 @@ export function CarerPage({
   return (
     <div className="min-h-screen bg-page text-ink">
       <div className="mx-auto flex min-h-screen max-w-[1600px]">
-        <aside className="hidden w-72 shrink-0 flex-col overflow-y-auto bg-inverse px-5 py-8 text-on-inverse lg:flex">
+        <nav
+          aria-label="Main"
+          className="hidden w-72 shrink-0 flex-col overflow-y-auto bg-inverse px-5 py-8 text-on-inverse lg:flex"
+        >
           <button
             className="flex items-center gap-4 rounded-xl px-3 text-left focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse"
             onClick={() => goTo("dashboard")}
@@ -49,7 +52,7 @@ export function CarerPage({
             </span>
             <span className="text-2xl font-bold tracking-tight">AccessCare</span>
           </button>
-          <nav aria-label="Main navigation" className="mt-10 space-y-2">
+          <div className="mt-10 space-y-2">
             {navItems.map((item) => (
               <button
                 aria-current={isNavActive(item.target) ? "page" : undefined}
@@ -66,7 +69,7 @@ export function CarerPage({
                 {item.label}
               </button>
             ))}
-          </nav>
+          </div>
           <div className="mt-auto space-y-2 pt-8">
             <button
               className={`flex min-h-14 w-full items-center gap-4 rounded-2xl px-4 font-bold focus-visible:outline-3 focus-visible:outline-focus-inverse ${
@@ -106,9 +109,9 @@ export function CarerPage({
               </span>
             </button>
           </div>
-        </aside>
+        </nav>
 
-        <main className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
           <header className="border-b border-line bg-surface lg:hidden">
             <div className="flex min-h-20 items-center justify-between px-5">
               <button
@@ -131,7 +134,7 @@ export function CarerPage({
               </button>
             </div>
             <nav
-              aria-label="Mobile navigation"
+              aria-label="Main"
               className="flex gap-2 overflow-x-auto border-t border-line px-4 py-3"
             >
               {navItems.map((item) => (
@@ -153,17 +156,27 @@ export function CarerPage({
             </nav>
           </header>
 
-          <div className="px-5 py-8 md:px-10 md:py-10 xl:px-14">
+          <main
+            className="px-5 py-8 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus md:px-10 md:py-10 xl:px-14"
+            id={mainId}
+            tabIndex={-1}
+          >
             <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
               {eyebrow}
             </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">{title}</h1>
+            <h1
+              className="mt-2 text-3xl font-bold tracking-tight focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-focus md:text-4xl"
+              id={viewHeadingId}
+              tabIndex={-1}
+            >
+              {title}
+            </h1>
             <p className="mt-2 max-w-3xl text-lg leading-7 text-ink-muted">
               {description}
             </p>
             <div className="mt-8">{children}</div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
       <Toast message={toast} />
     </div>

@@ -26,10 +26,12 @@ import type { Repository, Snapshot } from "./storage/repository";
 export default function App({
   initial,
   onSaveFailed,
+  onViewChange,
   repository,
 }: {
   initial: Snapshot;
   onSaveFailed: () => void;
+  onViewChange: (name: string) => void;
   repository: Repository;
 }) {
   const { flashToast, setToast, toast } = useToast();
@@ -80,6 +82,7 @@ export default function App({
     todaysRows,
   } = useRoutine({ flashToast, initial, now, onSaveFailed, repository });
   const { goTo, isNavActive, screen, setScreen } = useNavigation({
+    onViewChange,
     reducedMotion: details.reducedMotion,
   });
   const {

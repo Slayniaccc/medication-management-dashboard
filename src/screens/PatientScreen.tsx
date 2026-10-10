@@ -8,7 +8,7 @@ import type {
 } from "../model/types";
 import type { Details } from "../storage/repository";
 import { formatTime } from "./format";
-import type { Screen } from "./navigation";
+import { mainId, viewHeadingId, type Screen } from "./navigation";
 
 export function PatientScreen({
   activeMedications,
@@ -96,9 +96,17 @@ export function PatientScreen({
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 py-8 md:px-8 md:py-12">
+      <main
+        className="mx-auto max-w-5xl px-5 py-8 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus md:px-8 md:py-12"
+        id={mainId}
+        tabIndex={-1}
+      >
         <p className="font-bold text-accent">Today’s medicines</p>
-        <h1 className="mt-2 text-4xl font-bold tracking-tight md:text-5xl">
+        <h1
+          className="mt-2 text-4xl font-bold tracking-tight focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-focus md:text-5xl"
+          id={viewHeadingId}
+          tabIndex={-1}
+        >
           Hello, {patientName.split(" ")[0] || "there"}
         </h1>
         <p className="mt-3 leading-relaxed text-ink-soft">

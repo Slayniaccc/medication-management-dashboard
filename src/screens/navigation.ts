@@ -12,6 +12,27 @@ export type Screen =
   | "settings"
   | "help";
 
+// What each view is called when a change of view is announced. These match the
+// navigation labels rather than the headings, which greet the reader by name on
+// the dashboard and the patient view.
+export const screenNames: Record<Screen, string> = {
+  dashboard: "Dashboard",
+  prescriptions: "Prescriptions",
+  reminders: "Reminders",
+  log: "Medicine log",
+  emergency: "Emergency contacts",
+  profile: "Care profile",
+  setup: "Patient setup",
+  patient: "Patient view",
+  settings: "Settings",
+  help: "Help & support",
+};
+
+// Every view has one main landmark and one h1 carrying these ids. The skip link
+// targets the first, and focus moves to the second when the view changes.
+export const mainId = "main";
+export const viewHeadingId = "view-heading";
+
 export const navItems: Array<{
   label: string;
   icon: IconName;

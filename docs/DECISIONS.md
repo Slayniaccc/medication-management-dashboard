@@ -385,3 +385,21 @@ The cost is real and is listed under Known issues. While everything was one comp
 The earlier entry on screen extraction said this work would remove the long prop lists. It does not, and that is a choice rather than an oversight. If they become a real cost, the hooks can sit behind a provider without changing them.
 
 Three things moved rather than being copied. The save and toast calls that `App.tsx` made around each action now happen inside the hook that owns the action, so `useRoutine` takes `flashToast` and `onSaveFailed`. The table mapping navigation targets to screens was written out twice and is now one constant. `saveNotGiven` and `savePrescription` were each split in two: the dialog hook checks and clears the draft, and `useRoutine` builds and stores the record. The twenty-two detail fields are still twenty-two pieces of state, because the screens call their setters with updater functions and folding them into one record would have meant editing every screen.
+
+---
+
+## 2026-10-10: A change of view moves focus to the h1 and is announced from above the screens
+
+**Decision.** Every view has one `<main id="main">` and one `<h1 id="view-heading" tabIndex={-1}>`. `useNavigation` watches the current screen, and when it changes it focuses the heading and passes the view's name up through an `onViewChange` prop. `Root` in `src/main.tsx` holds that name in a visually hidden `aria-live="polite"` region, and also renders the skip link as the first element in the document. Nothing happens on first load.
+
+**Alternative.** Give each screen a ref to its heading and focus it from the screen. Or render the live region inside each screen. Or announce the heading text rather than a separate name.
+
+**Why.** The live region has to sit outside the screens: they are replaced whole, and a region that arrives already holding its text is not reliably spoken. `Root` already holds the storage notice for the same reason, and `App.tsx` stays free of markup. Finding the heading by a shared id costs one line per screen, where refs would add a prop to every screen for a single call. The announced name is the navigation label ("Dashboard", "Patient view") because two headings are greetings ("Good morning, Meera") that do not say where the reader is. On the six pages whose heading is the label, a screen reader may say the name twice, once for focus and once for the region. AGENTS.md asks for both, so that is accepted until the manual screen reader pass shows whether it is a nuisance.
+
+The headings and the main landmark show the focus ring only under `:focus-visible`, so a mouse user does not see a ring appear on a heading they did not tab to. The ring on `main` is inset, because an outset one would be clipped by the edge of the window.
+
+**Landmarks.** The desktop sidebar was an `<aside>`, which made the primary navigation a complementary landmark with a nav inside it. It is now the `<nav>` itself, labelled "Main", and covers the help, settings and account buttons too, since every control in it changes the view. The mobile strip carries the same label; only one of the two is displayed at any width. `<main>` used to wrap the mobile header and navigation, so a skip link to it skipped nothing. It now wraps the content only, which also makes the header a banner landmark. Two `<aside>` elements inside `<main>` that held ordinary content, the reminder controls and the carer column on the profile, became a labelled section and a `div`.
+
+**Headings.** Checked by reading every screen: one h1 each, h2 for sections, h3 only on the dashboard's medicine cards and under one h2 on the profile. No level was skipped, so no heading changed level.
+
+**Not done here.** The page title does not change with the view, and the dashboard's mobile navigation still does not mark the current page. The skip link and the announcement sit outside the patient view root, like the storage notice, so the link does not follow Asha's theme or text size. None of this has been run through a screen reader or a browser yet.

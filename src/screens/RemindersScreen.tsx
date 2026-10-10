@@ -69,8 +69,13 @@ export function RemindersScreen({
             );
           })}
         </section>
-        <aside className="rounded-2xl border border-line bg-surface p-6">
-          <h2 className="text-xl font-bold">Reminder controls</h2>
+        <section
+          aria-labelledby="reminder-controls-heading"
+          className="rounded-2xl border border-line bg-surface p-6"
+        >
+          <h2 id="reminder-controls-heading" className="text-xl font-bold">
+            Reminder controls
+          </h2>
           <div className="mt-4">
             <ToggleRow
               checked={reminderOn}
@@ -85,7 +90,7 @@ export function RemindersScreen({
               onChange={() => setSoundAlerts((value) => !value)}
             />
           </div>
-        </aside>
+        </section>
       </div>
     </CarerPage>
   );

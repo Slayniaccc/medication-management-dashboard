@@ -13,7 +13,7 @@ import type {
 import type { Details } from "../storage/repository";
 import type { CarerPageShell } from "./CarerPage";
 import { formatTime, timeParts } from "./format";
-import { navItems } from "./navigation";
+import { mainId, navItems, viewHeadingId } from "./navigation";
 
 // A logged dose shows its outcome instead, and a pending one needs no label.
 const unloggedStatusLabel: Partial<Record<DoseStatus, string>> = {
@@ -59,7 +59,10 @@ export function DashboardScreen({
   return (
     <div className="min-h-screen bg-page text-ink">
       <div className="mx-auto flex min-h-screen max-w-[1600px]">
-        <aside className="hidden w-72 shrink-0 flex-col overflow-y-auto bg-inverse px-5 py-8 text-on-inverse lg:flex">
+        <nav
+          aria-label="Main"
+          className="hidden w-72 shrink-0 flex-col overflow-y-auto bg-inverse px-5 py-8 text-on-inverse lg:flex"
+        >
           <div className="flex items-center gap-4 px-3">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-highlight text-on-highlight">
               <Icon name="medication" className="h-7 w-7" />
@@ -67,7 +70,7 @@ export function DashboardScreen({
             <span className="text-2xl font-bold tracking-tight">AccessCare</span>
           </div>
 
-          <nav aria-label="Main navigation" className="mt-10 space-y-2">
+          <div className="mt-10 space-y-2">
             {navItems.map((item) => (
               <button
                 aria-current={isNavActive(item.target) ? "page" : undefined}
@@ -84,7 +87,7 @@ export function DashboardScreen({
                 {item.label}
               </button>
             ))}
-          </nav>
+          </div>
 
           <div className="mt-auto space-y-2">
             <button
@@ -117,9 +120,9 @@ export function DashboardScreen({
               </div>
             </button>
           </div>
-        </aside>
+        </nav>
 
-        <main className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
           <header className="flex min-h-20 items-center justify-between border-b border-line bg-page/90 px-5 backdrop-blur md:px-10">
             <div className="flex items-center gap-3 lg:hidden">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-highlight">
@@ -162,7 +165,7 @@ export function DashboardScreen({
           </header>
 
           <nav
-            aria-label="Mobile navigation"
+            aria-label="Main"
             className="flex gap-2 overflow-x-auto border-b border-line bg-surface px-4 py-3 lg:hidden"
           >
             {navItems.map((item) => (
@@ -186,7 +189,11 @@ export function DashboardScreen({
             </button>
           </nav>
 
-          <div className="px-5 py-8 md:px-10 md:py-10 xl:px-14">
+          <main
+            className="px-5 py-8 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus md:px-10 md:py-10 xl:px-14"
+            id={mainId}
+            tabIndex={-1}
+          >
             <section
               className="scroll-mt-6 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"
               id="dashboard"
@@ -195,7 +202,11 @@ export function DashboardScreen({
                 <p className="mb-2 text-sm font-bold uppercase tracking-[0.12em] text-accent">
                   {patientName}’s care plan · fictional medicines
                 </p>
-                <h1 className="text-3xl font-bold tracking-tight text-ink md:text-4xl">
+                <h1
+                  className="text-3xl font-bold tracking-tight text-ink focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-focus md:text-4xl"
+                  id={viewHeadingId}
+                  tabIndex={-1}
+                >
                   Good morning, {carerName.split(" ")[0] || "Carer"}
                 </h1>
                 <p className="mt-2 text-base text-ink-muted">
@@ -565,8 +576,8 @@ export function DashboardScreen({
                 </section>
               </aside>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
 
       {children}

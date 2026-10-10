@@ -189,6 +189,7 @@ Keep this section and Known issues accurate as work lands. They are the only par
 - The demo data is written once, when the database is first created. The seeded dose events are the two days before that first open. There is no way to reset or export the data from the UI
 - Persistence has not been exercised in a browser yet: it passes the gate, but nobody has logged a dose, refreshed and seen it still there
 - No tests
+- A change of view moves focus to the new view's `h1` and announces the view's name in a polite live region. `useNavigation` does both, and the live region and the skip link are rendered by `Root` in `src/main.tsx`, above the screens. Every view has one `main`, which the skip link targets, and one `h1`. The primary navigation is a `nav` landmark labelled "Main". None of this has been checked with a screen reader or in a browser yet
 - The dose event model lives in `src/model/` as types and pure functions, and the UI reads and writes through it. `useRoutine` holds medications, schedules and dose events as three pieces of state. Today's doses, the next dose, the medicine log and the due soon and overdue labels are all derived from them and a clock that ticks every 30 seconds
 - The icon set and the shared UI primitives live in `src/components/`: `Icon`, `ToggleRow`, `Toast`, `Dialog` and `MedicationImage`. Buttons, cards and the initials avatars are still written out as class strings where they are used
 - Each of the ten screens is its own component in `src/screens/`, alongside the carer page shell (`CarerPage`), the two dialogs, and the navigation list and time and reason formatting they share. The dashboard still has its own copy of the navigation rather than using `CarerPage`
@@ -210,8 +211,10 @@ Keep this section and Known issues accurate as work lands. They are the only par
 - Two tabs open at once each hold their own copy of the state. Both write to the same database, but neither sees the other's changes until it is refreshed.
 - The app never asks the browser for persistent storage, so the browser may clear the database under storage pressure, and Safari clears it after seven days without a visit unless the app is added to the home screen.
 - A medicine photo is stored at the size it was chosen, as a data URL inside the medication record. Nothing resizes it.
-- The storage notice sits outside the patient view root, so it does not follow Asha's theme or text size.
-- Keyboard focus is dropped on every change of screen. Each screen is now a separate component, so the navigation button that was pressed is removed with the screen it was on, and nothing moves focus to the new one yet. Before the screens were split, focus stayed on the navigation button when moving between the dashboard and the six pages that share its layout. The mobile navigation strip also scrolls back to its start.
+- The storage notice and the skip link sit outside the patient view root, so they do not follow Asha's theme or text size.
+- The mobile navigation strip scrolls back to its start on every change of screen, and on the dashboard it does not mark the current page.
+- The page title is the same on every view.
+- Where a view's heading is the same as its name, a screen reader may hear the name twice on a change of view: once for the focused heading and once from the live region.
 
 ## Still open
 

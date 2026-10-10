@@ -1,6 +1,6 @@
 import { Icon } from "../components/Icon";
 import type { Details } from "../storage/repository";
-import type { Screen } from "./navigation";
+import { mainId, viewHeadingId, type Screen } from "./navigation";
 
 export function ProfileScreen({
   carerInitials,
@@ -72,13 +72,21 @@ export function ProfileScreen({
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-5 py-8 md:px-8 md:py-10">
+      <main
+        className="mx-auto max-w-6xl px-5 py-8 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus md:px-8 md:py-10"
+        id={mainId}
+        tabIndex={-1}
+      >
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
               My account
             </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">
+            <h1
+              className="mt-2 text-3xl font-bold tracking-tight focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-focus md:text-4xl"
+              id={viewHeadingId}
+              tabIndex={-1}
+            >
               {carerName}
             </h1>
             <p className="mt-2 text-lg text-ink-muted">
@@ -184,7 +192,7 @@ export function ProfileScreen({
             </section>
           </div>
 
-          <aside className="space-y-7">
+          <div className="space-y-7">
             <section
               aria-labelledby="carer-profile-heading"
               className="rounded-2xl border-2 border-accent bg-surface p-6"
@@ -315,7 +323,7 @@ export function ProfileScreen({
                 {consentGiven ? "Review consent" : "Record consent"}
               </button>
             </section>
-          </aside>
+          </div>
         </div>
       </main>
     </div>

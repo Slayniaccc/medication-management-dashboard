@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { Screen } from "../screens/navigation";
+import { useEffect, useRef, useState } from "react";
+import { screenNames, viewHeadingId, type Screen } from "../screens/navigation";
 
 const screenByTarget: Record<string, Screen> = {
   dashboard: "dashboard",
@@ -12,8 +12,26 @@ const screenByTarget: Record<string, Screen> = {
   "patient-view": "patient",
 };
 
-export function useNavigation({ reducedMotion }: { reducedMotion: boolean }) {
+export function useNavigation({
+  onViewChange,
+  reducedMotion,
+}: {
+  onViewChange: (name: string) => void;
+  reducedMotion: boolean;
+}) {
   const [screen, setScreen] = useState<Screen>("dashboard");
+
+  // Views are swapped rather than navigated to, so nothing tells a screen
+  // reader that the page changed. Focus goes to the new heading and the name is
+  // announced, once the new view is in the document. Not on first load, where
+  // moving focus would take it from wherever the browser put it.
+  const shown = useRef(screen);
+  useEffect(() => {
+    if (shown.current === screen) return;
+    shown.current = screen;
+    document.getElementById(viewHeadingId)?.focus();
+    onViewChange(screenNames[screen]);
+  }, [onViewChange, screen]);
 
   const goTo = (target: string) => {
     setScreen(screenByTarget[target] ?? "dashboard");

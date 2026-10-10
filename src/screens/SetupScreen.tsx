@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { Icon } from "../components/Icon";
 import { ToggleRow } from "../components/ToggleRow";
 import type { Details, PatientTheme, TextSize } from "../storage/repository";
-import type { Screen } from "./navigation";
+import { mainId, viewHeadingId, type Screen } from "./navigation";
 
 export function SetupScreen({
   details,
@@ -92,12 +92,20 @@ export function SetupScreen({
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
+      <main
+        className="mx-auto max-w-7xl px-5 py-8 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus md:px-8 md:py-10"
+        id={mainId}
+        tabIndex={-1}
+      >
         <div className="max-w-3xl">
           <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
             Patient setup
           </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">
+          <h1
+            className="mt-2 text-3xl font-bold tracking-tight focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-focus md:text-4xl"
+            id={viewHeadingId}
+            tabIndex={-1}
+          >
             Adapt AccessCare to the patient
           </h1>
           <p className="mt-3 text-lg leading-7 text-ink-muted">
