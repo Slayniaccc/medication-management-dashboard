@@ -147,6 +147,7 @@ React 19, Vite, Tailwind CSS v4 via `@tailwindcss/vite`, TypeScript, oxfmt. Vers
 pnpm install
 pnpm dev       # dev server
 pnpm build     # production build, must pass clean
+pnpm check     # typecheck and build, the gate
 pnpm format    # oxfmt
 ```
 
@@ -212,7 +213,7 @@ Honest inventory, so nobody mistakes a placeholder for a bug or a stub for a fea
 - **Short imperative subject lines**, under about 60 characters, no full stop. "Wire accessibility toggles to root attributes", not "wired up some toggle stuff and fixed a thing".
 - **No body** unless the reasoning is not visible in the diff. When there is one, it says why, never what.
 - **No trailers of any kind.** No co-author lines, no generated-with footers, no emoji. The history is the author's own work and should read that way.
-- **Never commit a failing build.** `pnpm build` passes first.
+- **Never commit a failing gate.** `pnpm check` passes first.
 - **Commit when a unit of work is complete**, without being asked each time. Do not ask whether to commit; do ask before anything that rewrites history or force pushes.
 
 ## Verification
