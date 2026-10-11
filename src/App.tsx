@@ -95,6 +95,7 @@ export default function App({
     markNotGiven,
   });
   const readAloud = useReadAloud({
+    active: screen === "patient" && !showAddPrescription && reasonFor === null,
     hasMedicines: activeMedications.length > 0,
     nextDose,
     nextMedication,

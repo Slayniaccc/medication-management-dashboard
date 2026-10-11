@@ -51,6 +51,8 @@ beforeEach(() => {
 
 afterEach(() => {
   act(() => root.unmount());
+  // Only there when a test gave this environment a voice.
+  delete (window as { speechSynthesis?: unknown }).speechSynthesis;
   container.remove();
   document.head.querySelector("style")?.remove();
   vi.useRealTimers();
@@ -304,6 +306,28 @@ describe("focus is never dropped by the action that was just taken", () => {
     expect(stored).toMatchObject({ outcome: "not-given", reason: "asleep", recordedBy: "carer" });
   });
 
+  it("goes to today's doses when the first prescription replaces the empty dashboard", async () => {
+    await render(emptySnapshot());
+    type("welcome-carer-name", "Sam");
+    type("welcome-patient-name", "Jo");
+    await press("Start");
+    await press("Add prescription");
+    type("prescription-name", "Medicine 1");
+    type("prescription-dosage", "10 mg");
+    type("prescription-quantity", "1 tablet");
+    const time = document.getElementById("reminder-0") as HTMLSelectElement;
+    act(() => {
+      time.value = "12:00";
+      time.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    const save = [...document.querySelectorAll("dialog button")].find(
+      (button) => nameOf(button) === "Add prescription",
+    ) as HTMLElement;
+    act(() => save.click());
+    expect(document.querySelector("dialog")).toBeNull();
+    expect(document.activeElement?.textContent).toBe("Today’s doses");
+  });
+
   it("goes to the safe answer when asked to remove, and to add back once removed", async () => {
     await render(exampleSnapshot(now));
     await goToView("Prescriptions");
@@ -385,5 +409,50 @@ describe("read aloud", () => {
     await render(exampleSnapshot(now));
     await goToView("Patient view");
     expect(document.body.textContent).not.toContain("aloud");
+  });
+
+  it("stops when the patient view is left, where nothing on screen could stop it", async () => {
+    const cancel = vi.fn();
+    const speak = vi.fn();
+    Object.defineProperty(window, "speechSynthesis", {
+      configurable: true,
+      value: { cancel, speak },
+    });
+    vi.stubGlobal("SpeechSynthesisUtterance", class {});
+    const example = exampleSnapshot(now);
+    await render({ ...example, details: { ...example.details, readAloud: true } });
+    await goToView("Patient view");
+    await press("Read next medicine aloud");
+    expect(speak).toHaveBeenCalledOnce();
+    cancel.mockClear();
+
+    await press("Carer dashboard");
+    expect(cancel).toHaveBeenCalledOnce();
+    await goToView("Patient view");
+    await press("Read next medicine aloud");
+
+    // A dialog over the view puts the stop button out of reach as well.
+    cancel.mockClear();
+    await press("I did not take it");
+    expect(cancel).toHaveBeenCalledOnce();
+    vi.unstubAllGlobals();
+  });
+});
+
+describe("what the dashboard says about the clock", () => {
+  it("does not call a dose due soon once its time has passed", async () => {
+    // 8:15: the 8:00 dose is inside the due soon window and past its time.
+    await render(exampleSnapshot(now));
+    expect(document.body.textContent).toContain("Next dose to log · Due now");
+    expect(document.body.textContent).not.toContain("Due soon");
+  });
+
+  it("says patient setup was saved after the dashboard is on screen", async () => {
+    await render(exampleSnapshot(now));
+    await goToView("Patient setup");
+    await press("Save patient setup");
+    expect(heading()).toContain("Meera");
+    expect(document.activeElement).toBe(document.querySelector("h1"));
+    expect(document.querySelector("[role=status]")?.textContent).toBe("Patient setup saved.");
   });
 });

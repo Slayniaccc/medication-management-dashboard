@@ -706,3 +706,26 @@ The batch runner sent the review task again. Every source file was read against 
 **Inventory corrections only.** The small state Settings holds for the clear-example question, the unused `carerNotes` field, and `disabled` having no high contrast value.
 
 **Could not be checked.** Whether the two workflows have run on GitHub: this run had no access to it. Current state still says neither has been seen to run. The four contradictions in the parts of AGENTS.md that may not be edited, listed in the first review entry, still stand.
+
+---
+
+## 2026-10-11: A third pass with the CodeForAll review, and four fixes
+
+The batch runner sent the review task a third time. The source was read again from the top against the rubric instead of against the earlier lists. Step 0 passed: nothing advises, every note on screen carries the carer's name, and the example's medicines have no real names. Nothing was blocking. Four important findings were new, and each is fixed with a test.
+
+**Read aloud stops when its stop button goes out of reach.** The hook that speaks lives in `App`, which is never unmounted by a change of view, so its "stop on leaving" only ran when the example was loaded or cleared. Pressing "Carer dashboard" mid-sentence left the voice running over the dashboard with nothing on screen to stop it, and opening the reason dialog put the stop button behind a modal. The hook is now told whether the patient view is showing with no dialog over it, and cancels when that stops being true. *Alternative:* move the hook into `PatientScreen` so unmounting does the work. Rejected because the dialogs open inside the patient view without unmounting it, so the second half of the fault would remain, and because state belongs in the hooks under `src/state`.
+
+**A dose is not called "due soon" after its time.** The due soon window runs from 30 minutes before a dose to 60 minutes after, which is the 2026-10-10 decision and still stands. The dashboard used the window's name as its label, so at 8:45 an 8:00 dose read "Due soon" and fifteen minutes later "Overdue". It now reads "Due soon" before the time and "Due now" from it. The model's status is unchanged: the window is one thing and this is two ways of wording it, so the choice is made on the dashboard. *Alternative:* a fourth status in the model. Rejected because nothing else would read it. "Due now" is a fact about the clock shown to the carer only, on the same footing as "Overdue".
+
+**Adding the first prescription does not drop focus.** On an empty dashboard the only "Add prescription" button is the one in the empty state, and the empty state is replaced by the list as soon as the prescription is saved. The dialog had nothing to return focus to, so the first thing a new carer does ended with focus at the top of the document. Focus now goes to the "Today's doses" heading. Every other place the dialog opens from keeps its button.
+
+**"Patient setup saved" arrives after the dashboard does.** The message was set in the same update that changed view, so the dashboard's status region was created with the text already in it, which is the case the toast's own comment says is not reliably spoken. The change of view is now flushed first and the message raised after it. The test for this can only check that the message is shown; whether it is spoken needs a screen reader.
+
+**Found and not fixed.**
+
+- A logged dose still cannot be corrected, and "Given" is one press. This is the largest gap left in the product and it waits on the correction decision in AGENTS.md, which is a conversation.
+- The Back button leaves the app, because views are swapped without history entries. Fixing it is a navigation feature, not a correction. Added to Known issues.
+- "Another reason" is stored with no detail, because no form collects the note the model already has room for. Added to Known issues.
+- Settings holds little beyond a pointer to patient setup, and the carer's details page repeats the patient setup as a read-only summary. Both could be folded away. Left, because cutting screens is a call for the author.
+- No browser, keyboard, zoom or screen reader pass. An empty write-up template for a VoiceOver pass is in the working tree at `docs/accessibility/` and has not been committed or filled in by this run.
+- `scripts/batch.sh` still hands the whole of `tasks.txt` to the first task it runs, because `claude -p` inherits the loop's standard input. Not changed here: the script was running this task at the time.

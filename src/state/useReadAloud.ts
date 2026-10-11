@@ -6,11 +6,15 @@ import { formatTime } from "../screens/format";
 // someone who does not use a screen reader, so it never starts by itself: it
 // speaks only when asked, can be stopped, and stops when the view is left.
 export function useReadAloud({
+  active,
   hasMedicines,
   nextDose,
   nextMedication,
   patientName,
 }: {
+  // Whether the button that stops it can be reached: the patient view is
+  // showing and no dialog is open over it.
+  active: boolean;
   hasMedicines: boolean;
   nextDose: Occurrence | null;
   nextMedication: Medication | null;
@@ -24,12 +28,16 @@ export function useReadAloud({
     setSpeaking(false);
   };
 
-  // Speech belongs to the page, not to the component, so it would carry on
-  // over whatever view came next.
+  // Speech belongs to the page, not to the view, so it would carry on over
+  // whatever came next, with nothing on screen to stop it. This hook outlives
+  // the patient view, so it is told when the view is left or covered.
   useEffect(() => {
-    if (!supported) return;
-    return () => window.speechSynthesis.cancel();
-  }, [supported]);
+    if (!supported || !active) return;
+    return () => {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+    };
+  }, [active, supported]);
 
   const start = () => {
     if (!supported) return;

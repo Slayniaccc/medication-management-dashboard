@@ -2,7 +2,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { Icon } from "../components/Icon";
 import { MedicationImage } from "../components/MedicationImage";
 import { doseStatus, occurrenceKey } from "../model/doses";
-import { localDateOf } from "../model/time";
+import { localDateOf, wallClockDate } from "../model/time";
 import type {
   DoseStatus,
   Medication,
@@ -15,10 +15,13 @@ import { CarerPage, type CarerPageShell } from "./CarerPage";
 import { formatDate, formatTime, greeting, timeParts } from "./format";
 
 // A logged dose shows its outcome instead, and a pending one needs no label.
-const unloggedStatusLabel: Partial<Record<DoseStatus, string>> = {
-  "due-soon": "Due soon",
-  overdue: "Overdue",
-};
+// The due soon window opens before a dose's time and runs on past it, so the
+// words follow the clock: soon until the time, now from then on.
+function unloggedStatusLabel(dose: Occurrence, status: DoseStatus, now: Date) {
+  if (status === "overdue") return "Overdue";
+  if (status !== "due-soon") return null;
+  return now < wallClockDate(dose.date, dose.timeOfDay) ? "Due soon" : "Due now";
+}
 
 export function DashboardScreen({
   children,
@@ -64,6 +67,19 @@ export function DashboardScreen({
     const added = loggedKeys.split("|").find((key) => key && !before.has(key));
     if (added) document.getElementById(`dose-outcome-${added}`)?.focus();
   }, [loggedKeys]);
+
+  // Adding the first prescription replaces the empty state, and with it the
+  // button that opened the dialog. Focus goes to the list that took its place.
+  const hasDoses = todaysRows.length > 0;
+  const hadDoses = useRef(hasDoses);
+  useEffect(() => {
+    if (hasDoses && !hadDoses.current) document.getElementById("schedule-heading")?.focus();
+    hadDoses.current = hasDoses;
+  }, [hasDoses]);
+
+  const nextDoseLabel = nextDose
+    ? unloggedStatusLabel(nextDose, doseStatus(nextDose, now), now)
+    : null;
 
   return (
     <CarerPage
@@ -128,9 +144,7 @@ export function DashboardScreen({
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.1em] text-ink-soft">
                   Next dose to log
-                  {unloggedStatusLabel[doseStatus(nextDose, now)]
-                    ? ` · ${unloggedStatusLabel[doseStatus(nextDose, now)]}`
-                    : ""}
+                  {nextDoseLabel ? ` · ${nextDoseLabel}` : ""}
                 </p>
                 <h2 id="next-dose-heading" className="mt-1 text-xl font-bold">
                   {nextMedication.name}, {formatTime(nextDose.timeOfDay)}
@@ -147,7 +161,11 @@ export function DashboardScreen({
           </section>
 
           <section aria-labelledby="schedule-heading" className="mt-8">
-            <h2 id="schedule-heading" className="text-2xl font-bold">
+            <h2
+              id="schedule-heading"
+              className="text-2xl font-bold focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-focus"
+              tabIndex={-1}
+            >
               Today’s doses
             </h2>
             <p className="mt-1 text-base text-ink-muted">
@@ -197,7 +215,7 @@ export function DashboardScreen({
                       </div>
                       {dose.event === null ? (
                         <div className="flex flex-1 flex-wrap items-center gap-2 md:flex-none">
-                          {unloggedStatusLabel[status] && (
+                          {unloggedStatusLabel(dose, status, now) && (
                             <p
                               className={`rounded-full px-3 py-1 text-sm font-bold ${
                                 status === "overdue"
@@ -205,7 +223,7 @@ export function DashboardScreen({
                                   : "bg-accent-subtle text-accent"
                               }`}
                             >
-                              {unloggedStatusLabel[status]}
+                              {unloggedStatusLabel(dose, status, now)}
                             </p>
                           )}
                           <button

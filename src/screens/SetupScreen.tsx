@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
+import { flushSync } from "react-dom";
 import { ExampleNotice } from "../components/ExampleNotice";
 import { FieldError } from "../components/FieldError";
 import { Icon } from "../components/Icon";
@@ -426,8 +427,11 @@ export function SetupScreen({
             className="min-h-12 rounded-xl bg-highlight px-6 text-sm font-bold text-on-highlight hover:bg-on-inverse focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-on-inverse"
             onClick={() => {
               if (!checkOnSubmit()) return;
+              // The dashboard is drawn first, so its status region is in the
+              // document and empty when the message arrives. A region that
+              // arrives already holding its message is not reliably spoken.
+              flushSync(() => goTo("dashboard"));
               flashToast("Patient setup saved.");
-              goTo("dashboard");
             }}
             type="button"
           >
