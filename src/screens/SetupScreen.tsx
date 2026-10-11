@@ -78,7 +78,7 @@ export function SetupScreen({
             </div>
             <div>
               <p className="font-bold">AccessCare</p>
-              <p className="text-sm text-ink-muted">Carer workspace</p>
+              <p className="text-sm text-ink-muted">Patient setup</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -88,7 +88,7 @@ export function SetupScreen({
               type="button"
             >
               <Icon name="home" className="h-4 w-4" />
-              Preview patient view
+              Go to Patient view
             </button>
             <button
               className="min-h-11 rounded-xl bg-primary px-4 text-sm font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
@@ -161,7 +161,7 @@ export function SetupScreen({
                 </label>
                 <label className="block">
                   <span className="mb-2 block font-bold">
-                    Disabilities or accessibility needs
+                    Disabilities and accessibility needs
                   </span>
                   <span className="mb-2 block text-sm text-ink-muted">
                     Describe vision, hearing, mobility, memory, learning, or communication
@@ -174,7 +174,7 @@ export function SetupScreen({
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block font-bold">Medical conditions or care notes</span>
+                  <span className="mb-2 block font-bold">Medical conditions and care notes</span>
                   <span className="mb-2 block text-sm text-ink-muted">
                     Write only what is useful to you. It is kept on this device and shown on
                     your details page.
@@ -293,12 +293,11 @@ export function SetupScreen({
                 />
                 <span>
                   <span className="block font-bold">
-                    I confirm that {patientName || "the patient"} gave informed consent
-                    for this care arrangement.
+                    I confirm that {patientName || "the patient"} agreed to this statement.
                   </span>
                   <span className="mt-1 block text-sm leading-5 text-ink-muted">
-                    Consent was freely given after the access and responsibilities were
-                    explained in a way the patient could understand.
+                    They agreed freely, after it was gone through in a way they could
+                    understand.
                   </span>
                 </span>
               </label>
@@ -419,7 +418,7 @@ export function SetupScreen({
             onClick={() => goTo("patient")}
             type="button"
           >
-            Preview patient view
+            Go to Patient view
           </button>
           <button
             className="min-h-12 rounded-xl bg-highlight px-6 text-sm font-bold text-on-highlight hover:bg-on-inverse focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-on-inverse"

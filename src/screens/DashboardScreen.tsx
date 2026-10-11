@@ -84,7 +84,9 @@ export function DashboardScreen({
         todaysRows.length === 0
           ? `No doses are scheduled for ${patient} today.`
           : toLog === 0
-            ? `All ${todaysRows.length} of ${patient}’s doses today are logged.`
+            ? todaysRows.length === 1
+              ? `${patient[0].toUpperCase()}${patient.slice(1)}’s one dose today is logged.`
+              : `All ${todaysRows.length} of ${patient}’s doses today are logged.`
             : `${patient[0].toUpperCase()}${patient.slice(1)} has ${todaysRows.length} ${
                 todaysRows.length === 1 ? "dose" : "doses"
               } today: ${logged} logged, ${toLog} still to log.`

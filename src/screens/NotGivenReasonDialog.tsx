@@ -52,7 +52,7 @@ export function NotGivenReasonDialog({
 
   return (
     <Dialog
-      closeLabel="Close without logging"
+      closeLabel={forPatient ? "Close without recording" : "Close without logging"}
       header={
         <>
           {/* The dose is part of the heading, so it is in the dialog's name: a
@@ -122,7 +122,7 @@ export function NotGivenReasonDialog({
           }}
           type="button"
         >
-          Log as not given
+          {forPatient ? "Record as not taken" : "Log as not given"}
         </button>
       </div>
     </Dialog>

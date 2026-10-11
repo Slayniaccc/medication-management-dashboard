@@ -223,6 +223,9 @@ describe("every dialog and failed form passes axe", () => {
     );
     expect(dialog.closest("[data-theme=high-contrast]")).not.toBeNull();
     await expectNoViolations();
+    // The button keeps the patient view's verb, not the carer's.
+    await press("Record as not taken");
+    expect(dialog.querySelector("[aria-invalid=true]")).not.toBeNull();
   });
 
   it("patient setup after a failed save", async () => {

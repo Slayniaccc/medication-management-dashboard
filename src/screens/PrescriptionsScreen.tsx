@@ -60,9 +60,9 @@ export function PrescriptionsScreen({
       description={
         activeMedications.length === 0
           ? `No prescriptions for ${patient} yet.`
-          : `${activeMedications.length} ${
-              activeMedications.length === 1 ? "prescription" : "prescriptions"
-            } for ${patient}, as you entered them.`
+          : activeMedications.length === 1
+            ? `1 prescription for ${patient}, as you entered it.`
+            : `${activeMedications.length} prescriptions for ${patient}, as you entered them.`
       }
       eyebrow="Medicines"
       title="Prescriptions"

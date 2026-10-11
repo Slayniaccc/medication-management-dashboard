@@ -27,7 +27,7 @@ export function MedicationImage({
   const { box, icon } = sizeClass[size];
   return medication.imageUrl ? (
     <img
-      alt={`${medication.name} packaging`}
+      alt={`Photo of ${medication.name}`}
       className={`${box} shrink-0 rounded-xl border border-line-strong object-cover ${className}`}
       src={medication.imageUrl}
     />

@@ -185,7 +185,7 @@ export function ProfileScreen({
                   `Theme: ${patientTheme.replace("-", " ")}`,
                   `Text size: ${textSize.replace("-", " ")}`,
                   `Read aloud button: ${readAloud ? "on" : "off"}`,
-                  `Blue and orange in place of green and red: ${colourSafe ? "on" : "off"}`,
+                  `Colours that do not rely on red and green: ${colourSafe ? "on" : "off"}`,
                   `Simplified patient view: ${simplifiedLayout ? "on" : "off"}`,
                   `Reduce motion: ${reducedMotion ? "on" : "off"}`,
                 ].map((preference) => (

@@ -664,3 +664,27 @@ The batch runner sent the review task again after the entry above. Rather than t
 - The IndexedDB repository is not exercised by any test, because jsdom has no IndexedDB and a stand-in would be a new dependency. Added to Known issues.
 - Patient setup still says consent is needed before the page can be saved, while every change on it is stored as it is made. Already under Known issues. Fixing it means choosing between a draft form and dropping the gate, which is a conversation.
 - No browser, keyboard, zoom or screen reader pass. Still the largest gap, and still needs a person.
+
+---
+
+## 2026-10-11: A second copy pass, and what it still found
+
+The batch runner sent the copy task again after the first pass had landed. Every screen, dialog, message and spoken sentence was read again against the four rules. No copy instructs in the app's own voice and every carer note is attributed. Seven things were left over, and each is fixed.
+
+**The patient's reason dialog ends in the patient's verb.** The dialog asked "Why did you not take it?" and then offered "Log as not given", which is Meera's wording, before the patient view confirmed it as "recorded as not taken". The button is now "Record as not taken" and the close button "Close without recording" when the patient is logging. The carer's dialog is unchanged. *Alternative:* one neutral label for both. Rejected because the earlier decision stands: each view keeps one verb through its own flow, and Asha's is record.
+
+**The consent tick says what is being confirmed.** It read "gave informed consent for this care arrangement", with a line about "the access and responsibilities", wording from the hackathon build that matches nothing on the page. It now confirms that the person agreed to the statement printed above it, freely, after it was gone through in a way they could understand. The stored fields are the same.
+
+**One name per thing.** The colour-safe setting was "Colours that do not rely on red and green" where it is switched and "Blue and orange in place of green and red" where it is listed; the list now uses the switch's name. The two free-text fields in patient setup said "or" where the details page says "and". The patient setup header said "Carer workspace", a name used nowhere else, and now names the page.
+
+**"Preview patient view" is "Go to Patient view".** The button opens the real patient view, where a press logs a real dose that cannot be undone. Preview promised something safer than that. It now reads like every other button that changes page.
+
+**Counts of one.** "All 1 of Asha's doses today are logged" and "1 prescription for Asha, as you entered them" are now written for one.
+
+**A medicine photo is described as a photo.** Its text alternative claimed "packaging", which the app cannot know.
+
+**Read and left alone.**
+
+- The four consent methods are stored as the words shown, so rewording them would leave an existing record matching no option.
+- The two notices about nothing being saved state the fact and offer no next step, because the app has none it can honestly promise.
+- "Theme" stays as the label for light, high contrast and dark.
