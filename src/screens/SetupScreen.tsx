@@ -334,7 +334,7 @@ export function SetupScreen({
                 ).map(([value, label]) => (
                   <button
                     aria-pressed={patientTheme === value}
-                    className={`min-h-14 rounded-xl border-2 px-2 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+                    className={`flex min-h-14 items-center justify-center gap-1 rounded-xl border-2 px-2 text-sm font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                       patientTheme === value
                         ? "border-accent bg-accent-subtle text-ink"
                         : "border-line-strong bg-surface text-ink-muted"
@@ -343,6 +343,8 @@ export function SetupScreen({
                     onClick={() => setPatientTheme(value)}
                     type="button"
                   >
+                    {/* The tick, so the choice does not rest on colour alone. */}
+                    {patientTheme === value && <Icon name="check" className="h-4 w-4 shrink-0" />}
                     {label}
                   </button>
                 ))}
@@ -364,7 +366,7 @@ export function SetupScreen({
                 ).map(([value, label]) => (
                   <button
                     aria-pressed={textSize === value}
-                    className={`min-h-14 rounded-xl border-2 px-2 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+                    className={`flex min-h-14 items-center justify-center gap-1 rounded-xl border-2 px-2 font-bold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                       textSize === value
                         ? "border-accent bg-accent-subtle text-ink"
                         : "border-line-strong bg-surface text-ink-muted"
@@ -373,6 +375,7 @@ export function SetupScreen({
                     onClick={() => setTextSize(value)}
                     type="button"
                   >
+                    {textSize === value && <Icon name="check" className="h-4 w-4 shrink-0" />}
                     {label}
                   </button>
                 ))}

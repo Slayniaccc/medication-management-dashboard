@@ -48,7 +48,9 @@
 
   --color-focus: #173b42;
   --color-focus-inverse: #f8cf73;
-  --color-focus-on-primary: #e27064;
+  /* A ring sits outside its button with a gap, so it has to stand out from the
+     page around the button, not from the button. Coral did not: 2.88:1. */
+  --color-focus-on-primary: #173b42;
 
   --color-med-coral: #e27064;
   --color-med-teal: #41998e;

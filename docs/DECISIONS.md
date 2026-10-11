@@ -563,3 +563,25 @@ When the patient is the one logging, the reason dialog now uses the patient's wo
 - The log says how long after its time a dose was logged when that is an hour or more, as a count ("4 hours after its time") and nothing else. It does not say late.
 - The step numbers on patient setup are gone. They ran 1, 3, 4, 2 in reading order.
 - Toasts stay for six seconds, up from under three, and the status region they appear in is always in the document so the message is announced.
+
+---
+
+## 2026-10-11: Contrast is a test over the colour tokens
+
+**Decision.** `src/contrast.test.ts` reads the token values out of `src/index.css`, resolves them for each of the three themes with colour-safe on and off, and checks a written list of foreground and background pairs: 4.5:1 for every text pair and 3:1 for borders, icons that carry meaning and focus rings. It runs in `pnpm check`.
+
+**Alternative.** Measure once by hand and record the numbers. Or measure rendered pixels with axe in a real browser.
+
+**Why.** Every screen takes its colours from the tokens and nowhere else, which is the earlier decision paying off: the set of things that can be put next to each other is a short list, and checking it is arithmetic. A hand measurement is true on the day and silently false after the next palette change. The browser route needs the browser the axe decision already turned down.
+
+Text size needs no extra combinations. The setting changes sizes and no colours, and the test holds every text pair to the body figure of 4.5:1 without using the large text allowance, so a pass holds at all three sizes.
+
+**What it found.** Of the pairs in use, one failed: the coral focus ring around filled buttons in the light theme, 2.88:1 against the page and 2.57:1 against the tinted next-dose panel. The ring sits outside the button with a gap, so the page is what it has to stand out from, and it is now the same dark teal as every other ring. Everything else passed in all six combinations, including the high contrast, dark and colour-safe values that had never been measured.
+
+**Found by reading, not by the test, and fixed with it.** These are things a token table cannot see:
+
+- Text fields showed focus as a pale ring (`accent-line`, about 1.5:1 on white) and a border colour change. They now use the same 3px outline as buttons.
+- The switch knob was white on a near-white track when off, about 1.1:1, so the only thing showing its state was the track colour. The knob is dark when off.
+- The chosen theme and text size buttons differed from the others by colour alone. The chosen one now carries a tick.
+
+**Limits.** The test reads values, not pixels: it knows nothing about a medicine photo behind an icon or the translucent dialog backdrop, and it is only as complete as its list of pairs, which has to be extended when a new combination is used. The storage notice and skip link sit outside the patient view root and are only ever drawn in the light theme. None of this has been looked at in a browser.

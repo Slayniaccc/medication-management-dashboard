@@ -32,8 +32,10 @@ export function ToggleRow({
           }`}
         >
           <span
-            className={`absolute top-1 h-5 w-5 rounded-full bg-surface shadow-sm transition ${
-              checked ? "left-7" : "left-1"
+            // Dark on the pale track when off, so the knob's position can be
+            // seen. A white knob there was 1.1:1.
+            className={`absolute top-1 h-5 w-5 rounded-full transition ${
+              checked ? "left-7 bg-surface" : "left-1 bg-line-strong"
             }`}
           />
         </span>
