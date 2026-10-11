@@ -4,7 +4,7 @@ import { localDateOf } from "../model/time";
 import type { DoseEvent, Medication } from "../model/types";
 import type { Details } from "../storage/repository";
 import { CarerPage, type CarerPageShell } from "./CarerPage";
-import { clockParts, dayLabel, formatTime, reasonLabel } from "./format";
+import { clockParts, dayPhrase, formatTime, reasonLabel } from "./format";
 
 // How long after its time a dose was logged, as a plain count. It is the gap
 // between two recorded times and nothing more: the log does not say whether a
@@ -76,11 +76,11 @@ export function LogScreen({
                     {medication ? `${medication.name} · ${medication.strength}` : "Medicine"}
                   </p>
                   <p className="mt-1 text-base text-ink-muted">
-                    Due {dayLabel(event.date, now).toLowerCase()} at {formatTime(event.timeOfDay)}
+                    Due {dayPhrase(event.date, now)} at {formatTime(event.timeOfDay)}
                   </p>
                   <p className="mt-1 text-base text-ink-muted">
                     Logged{" "}
-                    {loggedOn === event.date ? "" : `${dayLabel(loggedOn, now).toLowerCase()} `}
+                    {loggedOn === event.date ? "" : `${dayPhrase(loggedOn, now)} `}
                     at {loggedTime.clock} {loggedTime.period}
                     {gap ? `, ${gap},` : ""} by{" "}
                     {event.recordedBy === "carer" ? carerName || "the carer" : patientName || "the patient"}

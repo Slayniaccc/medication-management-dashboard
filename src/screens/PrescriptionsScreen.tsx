@@ -6,7 +6,7 @@ import type { LocalDate } from "../model/time";
 import type { Medication } from "../model/types";
 import type { Details } from "../storage/repository";
 import { CarerPage, type CarerPageShell } from "./CarerPage";
-import { dayLabel } from "./format";
+import { dayPhrase } from "./format";
 
 export function PrescriptionsScreen({
   activeMedications,
@@ -173,7 +173,7 @@ export function PrescriptionsScreen({
                   <h3 className="text-lg font-bold">{medication.name}</h3>
                   <p className="mt-1 text-base text-ink-muted">
                     {medication.strength} · {medication.form} · {times.join(", ")} · Removed{" "}
-                    {dayLabel(removedOn, now).toLowerCase()}
+                    {dayPhrase(removedOn, now)}
                   </p>
                 </div>
                 <button

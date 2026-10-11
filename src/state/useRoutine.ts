@@ -105,7 +105,9 @@ export function useRoutine({
     };
     setEvents((items) => recordDose(items, event));
     save(repository.recordDose(event));
-    flashToast("Dose logged as given.");
+    // The patient view says what was recorded in its own words, and keeps it
+    // on screen, so the carer's message is not shown there as well.
+    if (recordedBy === "carer") flashToast("Dose logged as given.");
   };
 
   const markNotGiven = (
@@ -124,7 +126,7 @@ export function useRoutine({
     };
     setEvents((items) => recordDose(items, event));
     save(repository.recordDose(event));
-    flashToast("Dose logged as not given, with the reason.");
+    if (recordedBy === "carer") flashToast("Dose logged as not given, with the reason.");
   };
 
   const addPrescription = ({

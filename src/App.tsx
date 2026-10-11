@@ -111,6 +111,8 @@ export default function App({
   const reasonDialog = reasonFor !== null && (
     <NotGivenReasonDialog
       details={details}
+      dose={reasonFor.dose}
+      medicationName={medicationById.get(reasonFor.dose.medicationId)?.name ?? "Medicine"}
       reason={reason}
       recordedBy={reasonFor.recordedBy}
       saveNotGiven={saveNotGiven}
@@ -241,6 +243,7 @@ export default function App({
         readAloud={readAloud}
         setReasonFor={setReasonFor}
         setShowAddPrescription={setShowAddPrescription}
+        toast={toast}
         todaysDoses={todaysDoses}
       >
         {addPrescriptionDialog}

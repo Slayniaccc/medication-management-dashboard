@@ -643,3 +643,24 @@ Checked and left: "Overdue" on the carer dashboard (a fact about the clock, deci
 - Patient setup and the carer's details are still stored as typed.
 
 **The moment this project targets**, named because the rubric asks: a dose is due, something happens to it, and it is written down with its reason, by either of two people, in a form both of them can read. What it does that a reminder app does not: it keeps why a dose was not given as a first-class fact, keeps the difference between when a dose was due and when it was logged, and gives the person taking the medicine her own view of the same record, shaped to her vision and dexterity.
+
+---
+
+## 2026-10-11: A second pass with the CodeForAll review, and four fixes
+
+The batch runner sent the review task again after the entry above. Rather than trust that list, the code was read again against the rubric. Step 0 passed: no copy advises, every instruction on screen is attributed to the carer, and the example's medicines carry no real names. Four important findings were new, and each is fixed.
+
+**The reason dialog names the dose.** It asked "Why was this dose not given?" without saying which dose. On a dashboard of several rows a press on the wrong one could not be caught, and a logged dose cannot be undone. The medicine and its time are now the first line of the dialog's heading, so they are part of its accessible name as well as on screen. *Alternative:* a separate line tied in with `aria-describedby`. Rejected because a description is read after the name and sometimes not at all, and this is the one fact the dialog must not leave out.
+
+**Days are written as they are said.** The log, the Reminders page and the removed prescriptions list lowercased a whole formatted date to make "Today" fit mid-sentence, which produced "Due thursday 8 october". One function, `dayPhrase`, now returns "today", "yesterday" or "on Thursday 8 October". With the example loaded, four days in six showed the fault.
+
+**The patient view confirms an added prescription, and stops doubling up on a dose.** The message that says a prescription was added was only drawn by the carer page shell, so adding one from the patient view closed the dialog and said nothing. The patient view now shows it. A dose recorded there already has a message in the patient's words that stays on screen, so the carer's "Dose logged as given" is no longer raised for it. *Alternative:* leave the patient view with its one status box and put the prescription message in it. Rejected because that box holds the last dose recorded and should keep holding it.
+
+**The example shows both people logging.** Every example dose was logged by Meera and logging from the patient view was off, so the half of the product that is Asha's could only be seen by finding a switch in patient setup. Two of Medicine 3's doses are now recorded by Asha, including the one she did not want, and the switch is on in the example. A new device still starts with it off. *Why the refused dose:* the data model keeps "did not want it" apart from the other reasons because it is Asha's own decision, and the example now shows her being the one to write it down.
+
+**Found and not fixed.**
+
+- Any of today's doses can be logged before it is due, from either view. Stopping that would be the app deciding when a dose may be recorded, and the real remedy for a wrong entry is the correction decision that is still open. Added to Known issues.
+- The IndexedDB repository is not exercised by any test, because jsdom has no IndexedDB and a stand-in would be a new dependency. Added to Known issues.
+- Patient setup still says consent is needed before the page can be saved, while every change on it is stored as it is made. Already under Known issues. Fixing it means choosing between a draft form and dropping the gate, which is a conversation.
+- No browser, keyboard, zoom or screen reader pass. Still the largest gap, and still needs a person.

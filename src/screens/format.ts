@@ -30,11 +30,14 @@ export function formatDate(date: LocalDate) {
 const daysBefore = (at: Date, days: number): LocalDate =>
   localDateOf(new Date(at.getFullYear(), at.getMonth(), at.getDate() - days));
 
-/** Today and yesterday by name, any other day by its date. */
-export function dayLabel(date: LocalDate, now: Date) {
-  if (date === localDateOf(now)) return "Today";
-  if (date === daysBefore(now, 1)) return "Yesterday";
-  return formatDate(date);
+/**
+ * A day as it reads part way through a sentence: "today", "yesterday", or
+ * "on Thursday 8 October" for any other day.
+ */
+export function dayPhrase(date: LocalDate, now: Date) {
+  if (date === localDateOf(now)) return "today";
+  if (date === daysBefore(now, 1)) return "yesterday";
+  return `on ${formatDate(date)}`;
 }
 
 export function greeting(now: Date) {

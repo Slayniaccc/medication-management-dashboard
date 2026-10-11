@@ -1,6 +1,12 @@
 import { localDateOf, toInstant, wallClockDate } from "../model/time";
 import type { LocalDate, TimeOfDay } from "../model/time";
-import type { DoseEvent, Medication, NotGivenReason, Schedule } from "../model/types";
+import type {
+  DoseEvent,
+  Medication,
+  NotGivenReason,
+  RecordedBy,
+  Schedule,
+} from "../model/types";
 import type { Details, Snapshot } from "./repository";
 
 /** The details before anyone has entered anything. Every setting starts at its plainest. */
@@ -92,6 +98,8 @@ const daysBefore = (at: Date, days: number): LocalDate =>
  * - most doses given and logged within a few minutes of their time
  * - one dose logged four hours late, which reads differently in the log
  * - two doses not given, each with its reason
+ * - two doses logged by Asha from the patient view, one of them the dose she
+ *   did not want, so the log shows both people and logging is on in her view
  * - Medicine 2 moved from 8:30 to 9:00 three days ago. The old schedule was
  *   closed and a new one opened, so the earlier doses still sit at 8:30
  */
@@ -122,6 +130,7 @@ export function exampleSnapshot(now: Date): Snapshot {
     timeOfDay: TimeOfDay,
     loggedAt: TimeOfDay,
     reason?: NotGivenReason,
+    recordedBy: RecordedBy = "carer",
   ) => {
     const date = daysBefore(now, daysAgo);
     const record = {
@@ -129,7 +138,7 @@ export function exampleSnapshot(now: Date): Snapshot {
       date,
       timeOfDay,
       recordedAt: toInstant(wallClockDate(date, loggedAt)),
-      recordedBy: "carer" as const,
+      recordedBy,
     };
     events.push(
       reason ? { ...record, outcome: "not-given", reason } : { ...record, outcome: "given" },
@@ -143,8 +152,11 @@ export function exampleSnapshot(now: Date): Snapshot {
     else log("example-medicine-2", daysAgo, "09:00", "09:02");
 
     if (daysAgo === 4) log("example-medicine-3", daysAgo, "13:00", "17:00");
-    else if (daysAgo === 2) log("example-medicine-3", daysAgo, "13:00", "13:10", "refused");
-    else log("example-medicine-3", daysAgo, "13:00", "13:05");
+    else if (daysAgo === 2) {
+      log("example-medicine-3", daysAgo, "13:00", "13:10", "refused", "patient");
+    } else if (daysAgo === 1) {
+      log("example-medicine-3", daysAgo, "13:00", "13:05", undefined, "patient");
+    } else log("example-medicine-3", daysAgo, "13:00", "13:05");
 
     if (daysAgo === 5) log("example-medicine-1", daysAgo, "20:00", "20:40", "asleep");
     else log("example-medicine-1", daysAgo, "20:00", "20:07");
@@ -167,6 +179,7 @@ export function exampleSnapshot(now: Date): Snapshot {
       carerAvailability: "Most days",
       consentGiven: true,
       consentDate: firstDay,
+      allowMedicineChanges: true,
       patientTheme: "high-contrast",
       textSize: "large",
       colourSafe: true,

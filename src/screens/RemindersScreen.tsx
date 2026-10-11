@@ -2,7 +2,7 @@ import { Icon } from "../components/Icon";
 import type { Medication, Schedule } from "../model/types";
 import type { Details } from "../storage/repository";
 import { CarerPage, type CarerPageShell } from "./CarerPage";
-import { dayLabel, formatTime } from "./format";
+import { dayPhrase, formatTime } from "./format";
 
 export function RemindersScreen({
   activeSchedules,
@@ -70,7 +70,7 @@ export function RemindersScreen({
                   {previous && (
                     <p className="mt-2 text-base text-ink-soft">
                       Changed from {formatTime(previous.timeOfDay)}{" "}
-                      {dayLabel(schedule.startDate, now).toLowerCase()}. Doses logged before the
+                      {dayPhrase(schedule.startDate, now)}. Doses logged before the
                       change stay in the medicine log at {formatTime(previous.timeOfDay)}.
                     </p>
                   )}

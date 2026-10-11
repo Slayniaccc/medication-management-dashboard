@@ -203,8 +203,9 @@ describe("every dialog and failed form passes axe", () => {
   it("the not-given reason in the carer's words, empty and after a failed save", async () => {
     await render(exampleSnapshot(now));
     await press(/^Not given: log the 8:00 AM dose/);
+    // The dialog names the dose it is about, ahead of the question.
     expect(document.querySelector("dialog[open] h2")?.textContent).toBe(
-      "Why was this dose not given?",
+      "Medicine 1, 8:00 AMWhy was this dose not given?",
     );
     await expectNoViolations();
     await press("Log as not given");
@@ -213,12 +214,13 @@ describe("every dialog and failed form passes axe", () => {
   });
 
   it("the not-given reason in the patient's words, inside the patient view's theme", async () => {
-    const snapshot = exampleSnapshot(now);
-    await render({ ...snapshot, details: { ...snapshot.details, allowMedicineChanges: true } });
+    await render(exampleSnapshot(now));
     await goToView("Patient view");
     await press("I did not take it");
     const dialog = document.querySelector("dialog[open]")!;
-    expect(dialog.querySelector("h2")?.textContent).toBe("Why did you not take it?");
+    expect(dialog.querySelector("h2")?.textContent).toBe(
+      "Medicine 1, 8:00 AMWhy did you not take it?",
+    );
     expect(dialog.closest("[data-theme=high-contrast]")).not.toBeNull();
     await expectNoViolations();
   });
@@ -329,6 +331,27 @@ describe("focus is never dropped by the action that was just taken", () => {
       ["2026-06-12", "2026-06-18"],
       ["2026-06-18", null],
     ]);
+  });
+});
+
+describe("what the patient view says back", () => {
+  it("records a dose in the patient's words, without the carer's message as well", async () => {
+    await render(exampleSnapshot(now));
+    await goToView("Patient view");
+    await press("I have taken it");
+    const said = [...document.querySelectorAll("[role=status]")].map((region) =>
+      nameOf(region),
+    );
+    expect(said).toEqual(["Medicine 1, 8:00 AM: recorded as taken", ""]);
+    expect((await repository.load()).events.at(-1)).toMatchObject({ recordedBy: "patient" });
+  });
+
+  it("writes days in the log as they are said, with their capitals", async () => {
+    await render(exampleSnapshot(now));
+    await goToView("Medicine log");
+    expect(document.body.textContent).toContain("Due yesterday at 8:00 PM");
+    expect(document.body.textContent).toContain("Due on Friday 12 June at 8:00 AM");
+    expect(document.body.textContent).toContain("by Asha");
   });
 });
 

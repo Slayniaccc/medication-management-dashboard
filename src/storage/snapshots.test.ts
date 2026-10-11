@@ -65,6 +65,13 @@ describe("the example week", () => {
     ]);
   });
 
+  it("has doses logged by each of the two people, and lets the patient log", () => {
+    expect(details.allowMedicineChanges).toBe(true);
+    const byPatient = events.filter((event) => event.recordedBy === "patient");
+    expect(byPatient.map((event) => event.outcome).sort()).toEqual(["given", "not-given"]);
+    expect(events.some((event) => event.recordedBy === "carer")).toBe(true);
+  });
+
   it("has a schedule that changed mid-week by being superseded, not edited", () => {
     const medicineTwo = schedules.filter(
       (schedule) => schedule.medicationId === "example-medicine-2",

@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Icon } from "../components/Icon";
+import { Toast } from "../components/Toast";
 import { occurrenceKey } from "../model/doses";
 import type {
   DoseEvent,
@@ -24,6 +25,7 @@ export function PatientScreen({
   readAloud,
   setReasonFor,
   setShowAddPrescription,
+  toast,
   todaysDoses,
 }: {
   // The dialogs this view can open. They sit inside it so they take its theme
@@ -39,6 +41,9 @@ export function PatientScreen({
   readAloud: { speaking: boolean; start: () => void; stop: () => void; supported: boolean };
   setReasonFor: (value: { dose: OccurrenceKey; recordedBy: RecordedBy } | null) => void;
   setShowAddPrescription: (show: boolean) => void;
+  // Says a prescription was added. A dose recorded here has its own message
+  // under the heading, which stays.
+  toast: string;
   todaysDoses: Occurrence[];
 }) {
   const {
@@ -312,6 +317,7 @@ export function PatientScreen({
         </div>
       </main>
 
+      <Toast message={toast} />
       {children}
     </div>
   );

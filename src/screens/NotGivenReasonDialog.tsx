@@ -1,9 +1,9 @@
 import { Dialog } from "../components/Dialog";
 import { FieldError } from "../components/FieldError";
-import type { NotGivenReason, RecordedBy } from "../model/types";
+import type { NotGivenReason, OccurrenceKey, RecordedBy } from "../model/types";
 import { useFormErrors } from "../state/useFormErrors";
 import type { Details } from "../storage/repository";
-import { reasonLabel, reasonLabelForPatient } from "./format";
+import { formatTime, reasonLabel, reasonLabelForPatient } from "./format";
 
 const notGivenReasons: NotGivenReason[] = [
   "refused",
@@ -17,6 +17,8 @@ const notGivenReasons: NotGivenReason[] = [
 
 export function NotGivenReasonDialog({
   details,
+  dose,
+  medicationName,
   reason,
   recordedBy,
   saveNotGiven,
@@ -24,6 +26,9 @@ export function NotGivenReasonDialog({
   setReasonFor,
 }: {
   details: Details;
+  // Which dose is being logged, and the name of its medicine.
+  dose: OccurrenceKey;
+  medicationName: string;
   reason: NotGivenReason | "";
   // Who is logging, which decides whose words the dialog uses.
   recordedBy: RecordedBy;
@@ -50,7 +55,12 @@ export function NotGivenReasonDialog({
       closeLabel="Close without logging"
       header={
         <>
+          {/* The dose is part of the heading, so it is in the dialog's name: a
+              press on the wrong row is heard and seen before anything is logged. */}
           <h2 id="reason-title" className="text-2xl font-bold">
+            <span className="block text-lg text-ink-soft">
+              {medicationName}, {formatTime(dose.timeOfDay)}
+            </span>
             {forPatient ? "Why did you not take it?" : "Why was this dose not given?"}
           </h2>
           <p className="mt-2 text-base leading-6 text-ink-muted">
