@@ -74,7 +74,7 @@ export function PrescriptionsScreen({
         </p>
       )}
 
-      <ul className="grid gap-5 xl:grid-cols-2">
+      <ul className="grid gap-5 xl:grid-cols-2" hidden={activeMedications.length === 0}>
         {activeMedications.map((medication) => (
           <li className="rounded-2xl border border-line bg-surface p-6" key={medication.id}>
             <div className="flex items-start gap-4">

@@ -65,7 +65,22 @@ async function render(snapshot: Snapshot) {
 const nameOf = (element: Element) =>
   (element.getAttribute("aria-label") ?? element.textContent ?? "").replace(/\s+/g, " ").trim();
 
-const shown = (element: Element) => !element.closest(".hidden");
+const shown = (element: Element) => !element.closest(".hidden, [hidden]");
+
+// On a phone the destinations sit behind the Menu button, on every carer page.
+async function goToView(view: string) {
+  const menu = [...document.querySelectorAll("button")].find(
+    (button) => shown(button) && nameOf(button) === "Menu",
+  );
+  if (menu) {
+    if (menu.getAttribute("aria-expanded") === "false") await press("Menu");
+    await press(view);
+  } else {
+    // The patient view and the two full-page forms have a way back instead.
+    await press(/^(Carer dashboard|Back to dashboard)$/);
+    await goToView(view);
+  }
+}
 
 // Presses the first control on screen with this name, as a user would find it.
 async function press(name: string | RegExp) {
@@ -139,7 +154,7 @@ describe("the check itself", () => {
 describe("every view passes axe with the example loaded", () => {
   it.each(views)("%s", async (view) => {
     await render(exampleSnapshot(now));
-    if (view !== "Dashboard") await press(view);
+    if (view !== "Dashboard") await goToView(view);
     expect(heading()).not.toBe("");
     expect(document.querySelectorAll("h1")).toHaveLength(1);
     expect(document.querySelectorAll("main")).toHaveLength(1);
@@ -163,7 +178,7 @@ describe("every view passes axe with nothing entered but two names", () => {
     type("welcome-carer-name", "Sam");
     type("welcome-patient-name", "Jo");
     await press("Start");
-    if (view !== "Dashboard") await press(view);
+    if (view !== "Dashboard") await goToView(view);
     expect(heading()).not.toBe("");
     await expectNoViolations();
   });
@@ -200,7 +215,7 @@ describe("every dialog and failed form passes axe", () => {
   it("the not-given reason in the patient's words, inside the patient view's theme", async () => {
     const snapshot = exampleSnapshot(now);
     await render({ ...snapshot, details: { ...snapshot.details, allowMedicineChanges: true } });
-    await press("Patient view");
+    await goToView("Patient view");
     await press("I did not take it");
     const dialog = document.querySelector("dialog[open]")!;
     expect(dialog.querySelector("h2")?.textContent).toBe("Why did you not take it?");
@@ -213,7 +228,7 @@ describe("every dialog and failed form passes axe", () => {
     type("welcome-carer-name", "Sam");
     type("welcome-patient-name", "Jo");
     await press("Start");
-    await press("Patient setup");
+    await goToView("Patient setup");
     await press("Save patient setup");
     expect(document.querySelector("[aria-invalid=true]")).not.toBeNull();
     await expectNoViolations();
@@ -221,14 +236,14 @@ describe("every dialog and failed form passes axe", () => {
 
   it("removing a prescription asks first, and the question passes axe", async () => {
     await render(exampleSnapshot(now));
-    await press("Prescriptions");
+    await goToView("Prescriptions");
     await press("Remove Medicine 3");
     await expectNoViolations();
   });
 
   it("clearing the example asks first, and the question passes axe", async () => {
     await render(exampleSnapshot(now));
-    await press("Settings");
+    await goToView("Settings");
     await press("Clear the example and start with my own");
     await expectNoViolations();
   });
@@ -237,7 +252,7 @@ describe("every dialog and failed form passes axe", () => {
 describe("a change of view", () => {
   it("moves focus to the new heading, announces the view and names it in the title", async () => {
     await render(exampleSnapshot(now));
-    await press("Medicine log");
+    await goToView("Medicine log");
     expect(document.activeElement).toBe(document.querySelector("h1"));
     expect(announced()).toBe("Medicine log");
     expect(document.title).toBe("Medicine log · AccessCare");
@@ -250,7 +265,7 @@ describe("a change of view", () => {
     expect(document.activeElement).toBe(document.querySelector("h1"));
     expect(announced()).toBe("Dashboard");
 
-    await press("Settings");
+    await goToView("Settings");
     await press("Clear the example and start with my own");
     await press("Clear the example");
     expect(heading()).toBe("Welcome to AccessCare");
@@ -283,7 +298,7 @@ describe("focus is never dropped by the action that was just taken", () => {
 
   it("goes to the safe answer when asked to remove, and to add back once removed", async () => {
     await render(exampleSnapshot(now));
-    await press("Prescriptions");
+    await goToView("Prescriptions");
     await press("Remove Medicine 3");
     expect(nameOf(document.activeElement!)).toBe("Keep Medicine 3");
     await press("Keep Medicine 3");
@@ -317,12 +332,29 @@ describe("focus is never dropped by the action that was just taken", () => {
   });
 });
 
+describe("the phone menu", () => {
+  it("is closed until asked for, says so, and closes again on arriving", async () => {
+    await render(exampleSnapshot(now));
+    const menu = () =>
+      [...document.querySelectorAll("button")].find((button) => nameOf(button) === "Menu")!;
+    expect(menu().getAttribute("aria-expanded")).toBe("false");
+    expect(document.getElementById("phone-menu")?.hidden).toBe(true);
+
+    await press("Menu");
+    expect(menu().getAttribute("aria-expanded")).toBe("true");
+    await expectNoViolations();
+
+    await press("Medicine log");
+    expect(menu().getAttribute("aria-expanded")).toBe("false");
+  });
+});
+
 describe("read aloud", () => {
   it("is off until the carer turns it on, so it cannot talk over a screen reader", async () => {
     expect(emptySnapshot().details.readAloud).toBe(false);
     expect(exampleSnapshot(now).details.readAloud).toBe(false);
     await render(exampleSnapshot(now));
-    await press("Patient view");
+    await goToView("Patient view");
     expect(document.body.textContent).not.toContain("aloud");
   });
 });

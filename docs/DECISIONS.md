@@ -599,3 +599,47 @@ Text size needs no extra combinations. The setting changes sizes and no colours,
 **Needs doing once by hand.** Pages has to be switched to "GitHub Actions" as its source in the repository settings. Until then the deploy job fails and the check workflow is unaffected. The README says so.
 
 **Cost.** The stylesheet still loads Atkinson Hyperlegible from Google Fonts, so the published page makes one request to a third party. Nothing the carer enters is in it, but it is the only network request the app makes and it is listed under Known issues.
+
+---
+
+## 2026-10-11: On a phone the navigation opens from a Menu button
+
+**Decision.** In the phone layout the nine destinations sit behind one "Menu" button with `aria-expanded`, in the header of every carer page. The list still wraps when open, and it is closed again on arriving at any view. The sidebar on wider screens is unchanged.
+
+**Alternative.** Leave all nine showing above the content, as the wrapped strip did with eight.
+
+**Why.** Putting every view in one list made Help and the carer's details reachable on a phone, and made the strip four rows tall. That is about two hundred pixels between Meera and today's doses on every visit, on the device she is most likely to be holding. One button costs one extra press to go somewhere else and nothing to do the thing she came for. It is a native button and a `hidden` attribute, so there is no focus to manage: the list follows the button in the document. This adjusts the 2026-10-10 entry on wrapping, which still holds for the open list.
+
+---
+
+## 2026-10-11: Review against AGENTS.md and the CodeForAll rubric
+
+The `codeforall-review` skill is written to report and leave the fixing to the author. This run was asked to fix every blocking and important finding as well, so the report and the fixes are recorded together. Most were fixed in the commits above, where their reasoning is. This is the list, so it can be checked.
+
+**Step 0, medical advice: three violations found, all removed.**
+
+- The emergency screen said "Do not give another dose" and "Contact a clinician for advice" in the app's own voice. The screen is gone.
+- The patient view said "Here is what you need to do next" above a medicine, and "Tell your carer if you feel unwell or think you took the wrong dose". It now states what is next and whose note it is.
+- Prescription instructions were shown unattributed on the dashboard and prescriptions page, and new medicines were given the app-written purpose "New prescription". Notes are attributed everywhere and nothing is filled in.
+
+Checked and left: "Overdue" on the carer dashboard (a fact about the clock, decided 2026-10-10), the count of hours between due and logged in the log, and the Help line that questions about a medicine are for a pharmacist, doctor or nurse, which states the app's limit and advises nothing about any medicine.
+
+**Blocking, fixed.** Controls that reported success and did nothing. Removal with no confirmation or undo. Dialogs with no focus handling. Focus dropped to the top of the page by logging a dose, the app's main action. A focus ring at 2.88:1. Views that could not be reached on a phone. No first run. No tests behind the model's central claims.
+
+**Important, fixed.** Read aloud on by default. Scroll motion ignoring the device preference. Hardcoded date and greeting. Carer-worded reason dialog shown to the patient. Field focus shown by a 1.5:1 ring. Switch state and chosen theme shown by colour alone. Labels that described the system or promised alarms. No README. Page title the same on every view. Toasts gone in under three seconds from a status region that was added with its text already in it.
+
+**Contradictions with AGENTS.md that could not be fixed, because the text is outside the two sections that may be edited.**
+
+- Structure says `src/App.tsx` "currently holds the entire application". It has been composition only for some time.
+- Stack and commands describes `pnpm check` as "typecheck and build". It is now typecheck, tests and build, and there is a `pnpm test`.
+- Persistence says "no network layer". The stylesheet fetches a font from Google Fonts.
+- The Skills section says to use the accessibility skill "with the dev server running so it can audit a rendered page". This run had no browser, so it audited by reading and by axe in jsdom.
+
+**Not fixed, and why.** Each is under Known issues.
+
+- No manual keyboard, zoom or screen reader pass. This is the largest gap in the project: accessibility is its point and nothing has been observed in a browser since the hackathon build. It needs a person and a screen reader.
+- A logged dose cannot be corrected. That waits on the correction decision AGENTS.md lists as still open, which is a conversation and not a call for an unattended run.
+- No real notifications, a reminder time limited to four options, and no way to edit a prescription. Each is a feature, and the scope rule says to finish one moment before starting another.
+- Patient setup and the carer's details are still stored as typed.
+
+**The moment this project targets**, named because the rubric asks: a dose is due, something happens to it, and it is written down with its reason, by either of two people, in a form both of them can read. What it does that a reminder app does not: it keeps why a dose was not given as a first-class fact, keeps the difference between when a dose was due and when it was logged, and gives the person taking the medicine her own view of the same record, shaped to her vision and dexterity.

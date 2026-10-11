@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Icon } from "../components/Icon";
 import { Toast } from "../components/Toast";
 import {
@@ -45,6 +45,10 @@ export function CarerPage({
   eyebrow: string;
   title: string;
 }) {
+  // The phone menu. Each screen renders its own shell, so this starts closed
+  // again on every change of view.
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-page text-ink">
       <div className="mx-auto flex min-h-screen max-w-[1600px]">
@@ -95,10 +99,25 @@ export function CarerPage({
                 <Icon name="medication" />
               </span>
               <span className="font-bold">AccessCare</span>
+              {/* Nine destinations take four rows on a phone, which would sit
+                  between Meera and today's doses on every visit. They open
+                  from one button and close again on arriving anywhere. */}
+              <button
+                aria-controls="phone-menu"
+                aria-expanded={menuOpen}
+                className="ml-auto flex min-h-11 items-center gap-2 rounded-xl border-2 border-line-strong px-4 text-sm font-bold text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                onClick={() => setMenuOpen((open) => !open)}
+                type="button"
+              >
+                <Icon name={menuOpen ? "close" : "more"} className="h-4 w-4" />
+                Menu
+              </button>
             </div>
             <nav
               aria-label="Main"
               className="flex flex-wrap gap-2 border-t border-line px-4 py-3"
+              hidden={!menuOpen}
+              id="phone-menu"
             >
               {[...navItems, ...secondaryNavItems].map((item) => (
                 <button
