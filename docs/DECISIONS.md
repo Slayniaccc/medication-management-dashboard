@@ -585,3 +585,17 @@ Text size needs no extra combinations. The setting changes sizes and no colours,
 - The chosen theme and text size buttons differed from the others by colour alone. The chosen one now carries a tick.
 
 **Limits.** The test reads values, not pixels: it knows nothing about a medicine photo behind an icon or the translucent dialog backdrop, and it is only as complete as its list of pairs, which has to be extended when a new combination is used. The storage notice and skip link sit outside the patient view root and are only ever drawn in the light theme. None of this has been looked at in a browser.
+
+---
+
+## 2026-10-11: Deployed to GitHub Pages by a workflow, with the base path taken from the environment
+
+**Decision.** `.github/workflows/deploy.yml` runs the gate on every push to main and publishes `dist/` to GitHub Pages. `vite.config.ts` reads `BASE_PATH` for Vite's `base` and falls back to `/`. The workflow sets it to the repository's name.
+
+**Alternative.** Hardcode `base: "/medication-management-dashboard/"`. Or a relative base of `./`. Or push `dist/` to a `gh-pages` branch.
+
+**Why.** A hardcoded base breaks `pnpm dev`, `pnpm preview` and any host that serves from the root, and breaks again if the repository is renamed. A relative base works for this app today because it has one page, and would fail silently the day it gains a route. Reading it from the environment keeps local work at the root and puts the one fact that belongs to the host in the host's configuration. The Pages actions deploy an artifact, so there is no generated branch in the history, which matters with a commit budget. The deploy job runs `pnpm check` rather than `pnpm build`, so a failing test cannot be published.
+
+**Needs doing once by hand.** Pages has to be switched to "GitHub Actions" as its source in the repository settings. Until then the deploy job fails and the check workflow is unaffected. The README says so.
+
+**Cost.** The stylesheet still loads Atkinson Hyperlegible from Google Fonts, so the published page makes one request to a third party. Nothing the carer enters is in it, but it is the only network request the app makes and it is listed under Known issues.
