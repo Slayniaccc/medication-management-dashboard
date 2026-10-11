@@ -1,3 +1,4 @@
+import { supersedeSchedule } from "../model/schedules";
 import { localDateOf, toInstant, wallClockDate } from "../model/time";
 import type { LocalDate, TimeOfDay } from "../model/time";
 import type {
@@ -107,21 +108,27 @@ export function exampleSnapshot(now: Date): Snapshot {
   const firstDay = daysBefore(now, 6);
   const changeDay = daysBefore(now, 3);
 
-  const schedule = (
-    id: string,
-    medicationId: string,
-    timeOfDay: TimeOfDay,
-    startDate: LocalDate,
-    endDate: LocalDate | null,
-  ): Schedule => ({ id, medicationId, timeOfDay, startDate, endDate });
+  const schedule = (id: string, medicationId: string, timeOfDay: TimeOfDay): Schedule => ({
+    id,
+    medicationId,
+    timeOfDay,
+    startDate: firstDay,
+    endDate: null,
+  });
 
-  const schedules = [
-    schedule("example-schedule-1", "example-medicine-1", "08:00", firstDay, null),
-    schedule("example-schedule-2", "example-medicine-1", "20:00", firstDay, null),
-    schedule("example-schedule-3", "example-medicine-2", "08:30", firstDay, changeDay),
-    schedule("example-schedule-4", "example-medicine-2", "09:00", changeDay, null),
-    schedule("example-schedule-5", "example-medicine-3", "13:00", firstDay, null),
-  ];
+  // The change of time is made the way the model makes one, not written out
+  // as two rows that happen to meet.
+  const schedules = supersedeSchedule(
+    [
+      schedule("example-schedule-1", "example-medicine-1", "08:00"),
+      schedule("example-schedule-2", "example-medicine-1", "20:00"),
+      schedule("example-schedule-3", "example-medicine-2", "08:30"),
+      schedule("example-schedule-5", "example-medicine-3", "13:00"),
+    ],
+    "example-schedule-3",
+    { id: "example-schedule-4", timeOfDay: "09:00" },
+    changeDay,
+  );
 
   const events: DoseEvent[] = [];
   const log = (

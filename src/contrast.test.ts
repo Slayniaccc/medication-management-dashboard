@@ -64,7 +64,7 @@ const pairs: Array<[string, string[], number, string]> = [
   ["ink", ["accent-subtle", "accent-soft", "danger-subtle"], TEXT, "text on tinted panels"],
   ["ink-soft", ["page", "surface", "surface-muted", "surface-sunken"], TEXT, "secondary text"],
   ["ink-soft", ["accent-subtle", "accent-soft"], TEXT, "secondary text on tinted panels"],
-  ["ink-muted", ["page", "surface", "surface-muted", "surface-sunken"], TEXT, "hints and captions"],
+  ["ink-muted", ["page", "surface", "surface-muted", "surface-sunken", "accent-subtle"], TEXT, "hints and captions"],
   ["accent", ["page", "surface", "surface-muted", "accent-subtle", "accent-soft"], TEXT, "accent text and outlined buttons"],
   ["on-primary", ["primary", "primary-hover"], TEXT, "filled buttons"],
   ["on-inverse", ["inverse"], TEXT, "sidebar and toast"],
@@ -87,7 +87,7 @@ const pairs: Array<[string, string[], number, string]> = [
   // A focus ring is drawn outside its control with a gap, so what it has to
   // stand out from is the surface around the control.
   ["focus", ["page", "surface", "surface-muted", "surface-sunken", "accent-subtle"], UI, "focus ring"],
-  ["focus-on-primary", ["page", "surface", "surface-muted", "accent-soft"], UI, "focus ring around a filled button"],
+  ["focus-on-primary", ["page", "surface", "surface-muted", "accent-soft", "accent-subtle", "danger-subtle"], UI, "focus ring around a filled button"],
   ["focus-inverse", ["inverse"], UI, "focus ring in the sidebar"],
   ["on-inverse", ["inverse"], UI, "focus ring on the save bar"],
 ];

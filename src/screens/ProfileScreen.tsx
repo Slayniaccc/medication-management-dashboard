@@ -1,3 +1,4 @@
+import { ExampleNotice } from "../components/ExampleNotice";
 import { FieldError } from "../components/FieldError";
 import { Icon } from "../components/Icon";
 import { isLocalDate } from "../model/time";
@@ -87,6 +88,7 @@ export function ProfileScreen({
         id={mainId}
         tabIndex={-1}
       >
+        <ExampleNotice exampleData={details.exampleData} />
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">

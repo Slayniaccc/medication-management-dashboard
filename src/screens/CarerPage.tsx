@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { ExampleNotice } from "../components/ExampleNotice";
 import { Icon } from "../components/Icon";
 import { Toast } from "../components/Toast";
 import {
@@ -143,12 +144,7 @@ export function CarerPage({
             id={mainId}
             tabIndex={-1}
           >
-            {exampleData && (
-              <p className="mb-6 rounded-xl border-2 border-line-strong bg-surface px-4 py-3 text-base text-ink">
-                <strong>Example data.</strong> The people, medicines and doses here are made up.
-                Clear the example in Settings when you want to enter your own.
-              </p>
-            )}
+            <ExampleNotice exampleData={exampleData} />
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">

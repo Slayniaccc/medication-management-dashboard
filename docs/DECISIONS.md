@@ -688,3 +688,21 @@ The batch runner sent the copy task again after the first pass had landed. Every
 - The four consent methods are stored as the words shown, so rewording them would leave an existing record matching no option.
 - The two notices about nothing being saved state the fact and offer no next step, because the app has none it can honestly promise.
 - "Theme" stays as the label for light, high contrast and dark.
+
+---
+
+## 2026-10-11: A second review against AGENTS.md, and three claims made true
+
+The batch runner sent the review task again. Every source file was read against the product boundary, the invariants and the Current state list. No invariant and no boundary is broken. Three statements the project makes about itself were not true, and in each case the code was changed to match the statement, because the statement was the better design.
+
+**The example is labelled on every carer page.** The first-run decision and Current state both said so, and the label was drawn only by the shared carer page shell. Patient setup and the carer's details have their own headers, so they showed Asha, Meera and a phone number with nothing saying they were made up. The label is now one component, `ExampleNotice`, used by the shell and by those two pages, and the axe pass checks it is on every carer view with the example loaded and on none without. *Alternative:* correct the sentence to "most carer pages". Rejected because these are the two pages that hold a person's details, where mistaking made-up for real costs most.
+
+**The patient view is left unlabelled, and that is now written down.** The decision was about carer pages, and the README said "everywhere". The README now says what is true. *Why not label it too:* the patient view is the page built to hold as little as possible for Asha, and the example is loaded deliberately by the carer from a page that says what it is. This is cheap to reverse and is listed under Known issues so it gets looked at.
+
+**The example's change of time goes through `supersedeSchedule`.** Current state said the function was used by the example and the tests. The example wrote the closed schedule and its replacement out by hand, so the function was reached only by tests and the example showed the shape of a supersession without performing one. It now calls the function. The stored rows are the same, and the existing snapshot tests hold them.
+
+**The contrast table gained three pairs that were in use and not listed:** hint text on the pale accent panel, and the filled-button focus ring on the pale accent and pale danger panels, all on the carer's details and patient setup. All pass in every theme. Nothing was failing; the list was short.
+
+**Inventory corrections only.** The small state Settings holds for the clear-example question, the unused `carerNotes` field, and `disabled` having no high contrast value.
+
+**Could not be checked.** Whether the two workflows have run on GitHub: this run had no access to it. Current state still says neither has been seen to run. The four contradictions in the parts of AGENTS.md that may not be edited, listed in the first review entry, still stand.

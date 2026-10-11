@@ -24,7 +24,7 @@ A change that helps one at the other's expense is a regression.
 - **A medicine log** showing when each dose was due, when it was logged and by whom. The gap between those two times is kept, because 8:05 for an 8:00 dose and 11pm for the same dose are different days.
 - **Prescriptions** added from what the carer types. Removing one asks first, keeps everything already logged, and can be undone from a list of removed prescriptions.
 - **A patient view** for Asha with its own theme (light, high contrast, dark), text size, simplified layout, colours that do not rely on red and green, and an optional read aloud button. It can be read-only, or she can log her own doses in her own words.
-- **First run and an example.** A new device starts empty and asks for two names. There is also a made-up week to look around in, which is labelled as an example everywhere and can be cleared.
+- **First run and an example.** A new device starts empty and asks for two names. There is also a made-up week to look around in, which is labelled as an example on every carer page and can be cleared.
 
 ## What is deliberately not built
 

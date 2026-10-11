@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
+import { ExampleNotice } from "../components/ExampleNotice";
 import { FieldError } from "../components/FieldError";
 import { Icon } from "../components/Icon";
 import { ToggleRow } from "../components/ToggleRow";
@@ -106,6 +107,7 @@ export function SetupScreen({
         id={mainId}
         tabIndex={-1}
       >
+        <ExampleNotice exampleData={details.exampleData} />
         <div className="max-w-3xl">
           <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
             Patient setup

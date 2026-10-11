@@ -158,6 +158,8 @@ describe("every view passes axe with the example loaded", () => {
     expect(heading()).not.toBe("");
     expect(document.querySelectorAll("h1")).toHaveLength(1);
     expect(document.querySelectorAll("main")).toHaveLength(1);
+    // Every carer page says the data is made up. The patient view does not.
+    expect(document.body.textContent?.includes("Example data.")).toBe(view !== "Patient view");
     await expectNoViolations();
   });
 });
@@ -180,6 +182,7 @@ describe("every view passes axe with nothing entered but two names", () => {
     await press("Start");
     if (view !== "Dashboard") await goToView(view);
     expect(heading()).not.toBe("");
+    expect(document.body.textContent).not.toContain("Example data.");
     await expectNoViolations();
   });
 });
