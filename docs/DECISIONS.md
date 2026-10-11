@@ -461,3 +461,19 @@ The sideways strip was the one interaction that needed a drag. Reaching the last
 **Alternative.** Keep passing `behavior: "smooth"` from script, chosen by the in-app setting, and add a `matchMedia` check beside it.
 
 **Why.** An explicit `behavior` passed to `scrollTo` overrides the stylesheet, so the scroll followed the in-app toggle and ignored the device's preference. A second check in script would have fixed that by keeping two sources in step by hand. With no behaviour passed, the stylesheet is the only place motion is decided and both sources are already there. The attribute rule also did not match `html` itself, only its descendants, and the root is where the window's scroll behaviour is read from. Every other moving thing in the app is a Tailwind `transition` utility, checked by searching for them: there are no keyframe animations and no other scroll calls.
+
+---
+
+## 2026-10-11: Vitest for the model, and axe-core run over the rendered views inside the same suite
+
+**Decision.** Three development dependencies: `vitest`, `jsdom` and `axe-core`. The dose model is tested as plain functions. The axe pass is a test file that renders the real `Root` over the in-memory repository, presses its way to every view and dialog, and runs axe on each. `pnpm check` is now typecheck, tests, build, and a GitHub Actions workflow runs it on every push to main and every pull request.
+
+**Alternative.** For the axe pass, drive a real browser with Playwright and `@axe-core/playwright`, or run `@axe-core/cli` against the dev server. For the tests, Jest, or Node's built-in runner.
+
+**Why.** There was no test runner and no automated accessibility check, so each dependency replaces nothing and adds something the gate did not have. Vitest reads the existing Vite config, so TypeScript and JSX need no second build setup, which is what Jest or the Node runner would have required. Hand-rolling the accessibility rules is not a real option: axe is several hundred rules kept current with WCAG and ARIA. jsdom is what lets axe run inside the test process. A real browser would also measure contrast and layout, but it means downloading a browser on every machine and in CI, a server to start and stop, and a gate that takes minutes; this one adds about two seconds, so it actually runs before every commit.
+
+The cost is stated in the test file and here: jsdom has no layout, so axe's contrast rule is off, hidden content is decided by one hand-written rule for `.hidden`, and only the phone layout is rendered because no breakpoint applies. A clean run is coverage, not conformance. The suite includes one deliberately broken render that must fail, so a pass is known to mean axe ran.
+
+The test time zone is fixed to Europe/London in the Vite config, because the daylight saving tests need a zone where the clocks change and must give the same answer on a laptop and in CI. `Root` moved out of `main.tsx` into its own file so the tests render the real skip link and live region instead of a copy.
+
+**Also done here.** `vite.config.ts` was three hundred lines of Figma Make preview plugins. They are gone, `index.html` is a plain document with a real title and language, and the package is no longer named `figma-make-app`. Nothing in the app used them.
