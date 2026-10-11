@@ -8,6 +8,8 @@ import { mainId, viewHeadingId, type Screen } from "./navigation";
 
 export function SetupScreen({
   details,
+  flashToast,
+  goTo,
   setAllowMedicineChanges,
   setColourSafe,
   setConsentDate,
@@ -20,12 +22,12 @@ export function SetupScreen({
   setPatientTheme,
   setReadAloud,
   setReducedMotion,
-  setScreen,
   setSimplifiedLayout,
   setTextSize,
-  setToast,
 }: {
   details: Details;
+  flashToast: (message: string) => void;
+  goTo: (screen: Screen) => void;
   setAllowMedicineChanges: Dispatch<SetStateAction<boolean>>;
   setColourSafe: Dispatch<SetStateAction<boolean>>;
   setConsentDate: (value: string) => void;
@@ -38,10 +40,8 @@ export function SetupScreen({
   setPatientTheme: (theme: PatientTheme) => void;
   setReadAloud: Dispatch<SetStateAction<boolean>>;
   setReducedMotion: Dispatch<SetStateAction<boolean>>;
-  setScreen: (screen: Screen) => void;
   setSimplifiedLayout: Dispatch<SetStateAction<boolean>>;
   setTextSize: (size: TextSize) => void;
-  setToast: (message: string) => void;
 }) {
   const {
     allowMedicineChanges,
@@ -84,7 +84,7 @@ export function SetupScreen({
           <div className="flex gap-2">
             <button
               className="hidden min-h-11 items-center gap-2 rounded-xl border-2 border-accent px-4 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus sm:flex"
-              onClick={() => setScreen("patient")}
+              onClick={() => goTo("patient")}
               type="button"
             >
               <Icon name="home" className="h-4 w-4" />
@@ -92,7 +92,7 @@ export function SetupScreen({
             </button>
             <button
               className="min-h-11 rounded-xl bg-primary px-4 text-sm font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
-              onClick={() => setScreen("dashboard")}
+              onClick={() => goTo("dashboard")}
               type="button"
             >
               Back to dashboard
@@ -115,11 +115,11 @@ export function SetupScreen({
             id={viewHeadingId}
             tabIndex={-1}
           >
-            Adapt AccessCare to the patient
+            Set up the patient view{patientName ? ` for ${patientName}` : ""}
           </h1>
           <p className="mt-3 text-lg leading-7 text-ink-muted">
-            Record the patient’s needs, choose accessibility support, and decide which
-            medication actions they can manage independently.
+            Who the patient is, how the patient view looks for them, what they can do in it,
+            and their consent to you keeping these records.
           </p>
         </div>
 
@@ -133,19 +133,16 @@ export function SetupScreen({
                 <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent-soft text-accent">
                   <Icon name="home" />
                 </span>
-                <div>
-                  <p className="text-sm font-bold text-accent">Step 1</p>
-                  <h2 id="patient-details-heading" className="text-xl font-bold">
-                    Patient details and needs
-                  </h2>
-                </div>
+                <h2 id="patient-details-heading" className="text-xl font-bold">
+                  Patient details and needs
+                </h2>
               </div>
 
               <div className="mt-6 space-y-5">
                 <label className="block">
                   <span className="mb-2 block font-bold">Patient name</span>
                   <input
-                    className="min-h-12 w-full rounded-xl border-2 border-line-strong px-4 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
+                    className="min-h-12 w-full rounded-xl border-2 border-line-strong px-4 text-base focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                     onChange={(event) => setPatientName(event.target.value)}
                     type="text"
                     value={patientName}
@@ -154,7 +151,7 @@ export function SetupScreen({
                 <label className="block">
                   <span className="mb-2 block font-bold">Patient age</span>
                   <input
-                    className="min-h-12 w-full rounded-xl border-2 border-line-strong px-4 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
+                    className="min-h-12 w-full rounded-xl border-2 border-line-strong px-4 text-base focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                     inputMode="numeric"
                     min="0"
                     onChange={(event) => setPatientAge(event.target.value)}
@@ -171,7 +168,7 @@ export function SetupScreen({
                     needs.
                   </span>
                   <textarea
-                    className="min-h-28 w-full rounded-xl border-2 border-line-strong p-4 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
+                    className="min-h-28 w-full rounded-xl border-2 border-line-strong p-4 text-base focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                     onChange={(event) => setDisabilities(event.target.value)}
                     value={disabilities}
                   />
@@ -179,10 +176,11 @@ export function SetupScreen({
                 <label className="block">
                   <span className="mb-2 block font-bold">Medical conditions or care notes</span>
                   <span className="mb-2 block text-sm text-ink-muted">
-                    Only include information the care team needs to provide safe support.
+                    Write only what is useful to you. It is kept on this device and shown on
+                    your details page.
                   </span>
                   <textarea
-                    className="min-h-28 w-full rounded-xl border-2 border-line-strong p-4 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
+                    className="min-h-28 w-full rounded-xl border-2 border-line-strong p-4 text-base focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                     onChange={(event) => setMedicalNeeds(event.target.value)}
                     value={medicalNeeds}
                   />
@@ -194,19 +192,18 @@ export function SetupScreen({
               aria-labelledby="permissions-heading"
               className="rounded-2xl border-2 border-accent bg-surface p-6 md:p-7"
             >
-              <p className="text-sm font-bold text-accent">Step 3</p>
-              <h2 id="permissions-heading" className="mt-1 text-xl font-bold">
-                Patient access and permissions
+              <h2 id="permissions-heading" className="text-xl font-bold">
+                What the patient can do
               </h2>
               <p className="mt-2 text-base leading-6 text-ink-muted">
-                Choose what {patientName || "the patient"} can change. The carer can
+                Choose whether {patientName || "the patient"} logs their own doses. You can
                 change this at any time.
               </p>
               <div className="mt-4">
                 <ToggleRow
                   checked={allowMedicineChanges}
-                  description="Allows the patient to record taken or not taken, add medicines, and change prescription details."
-                  label="Allow patient to manage and record medicines"
+                  description="Adds buttons to the patient view for recording a medicine as taken or not taken, and for adding a prescription."
+                  label="Let the patient log doses and add prescriptions"
                   onChange={() => setAllowMedicineChanges((value) => !value)}
                 />
               </div>
@@ -214,12 +211,12 @@ export function SetupScreen({
                 className={`mt-4 rounded-xl px-4 py-3 text-sm font-bold ${
                   allowMedicineChanges
                     ? "bg-accent-subtle text-accent"
-                    : "bg-danger-subtle text-danger"
+                    : "bg-surface-sunken text-ink"
                 }`}
               >
                 {allowMedicineChanges
-                  ? "Patient medicine management and dose reporting are enabled."
-                  : "View only. The carer must manage medicines and record every dose."}
+                  ? "On. Doses can be logged from the patient view as well as from the dashboard."
+                  : "Off. The patient view shows the medicines, and doses are logged from the dashboard."}
               </div>
             </section>
 
@@ -227,27 +224,27 @@ export function SetupScreen({
               aria-labelledby="consent-heading"
               className="rounded-2xl border-2 border-danger bg-surface p-6 md:p-7"
             >
-              <p className="text-sm font-bold text-danger">Step 4 · Required</p>
+              <p className="text-sm font-bold text-danger">Needed before this page can be saved</p>
               <h2 id="consent-heading" className="mt-1 text-xl font-bold">
                 Patient consent
               </h2>
               <p className="mt-2 leading-6 text-ink-muted">
-                Ask {patientName || "the patient"} to review this statement. Explain it
-                in an accessible format and give them an opportunity to ask questions.
+                Go through this statement with {patientName || "the patient"} in whatever way
+                works for them, with time for questions, and record their answer below.
               </p>
 
               <blockquote className="mt-5 rounded-xl border-l-4 border-accent bg-surface-muted p-4 leading-7 text-ink">
-                “I, {patientName || "the patient"}, consent to {carerName} supporting
-                and managing my medicines, reminders, dose records, accessibility
-                preferences, and care contacts in AccessCare. I understand what access
-                my carer will have, and that I can ask to change or withdraw my consent.”
+                “I, {patientName || "the patient"}, agree to {carerName || "my carer"} keeping
+                a record of my medicines, when they are due and whether each dose was taken,
+                in AccessCare on this device. I know what is being written down, and that I
+                can ask to see it, change it or stop it.”
               </blockquote>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <label className="block">
                   <span className="mb-2 block font-bold">How consent was given</span>
                   <select
-                    className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line"
+                    className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
                     onChange={(event) => setConsentMethod(event.target.value)}
                     value={consentMethod}
                   >
@@ -264,7 +261,7 @@ export function SetupScreen({
                       aria-describedby={errors["consent-date"] ? "consent-date-error" : undefined}
                       aria-invalid={errors["consent-date"] ? true : undefined}
                       aria-required="true"
-                      className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base outline-none focus:border-accent focus:ring-3 focus:ring-accent-line aria-[invalid=true]:border-danger"
+                      className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus aria-[invalid=true]:border-danger"
                       id="consent-date"
                       onChange={(event) => setConsentDate(event.target.value)}
                       type="date"
@@ -317,12 +314,9 @@ export function SetupScreen({
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent-soft text-accent">
                 <Icon name="settings" />
               </span>
-              <div>
-                <p className="text-sm font-bold text-accent">Step 2</p>
-                <h2 id="accessibility-heading" className="text-xl font-bold">
-                  Accessibility preferences
-                </h2>
-              </div>
+              <h2 id="accessibility-heading" className="text-xl font-bold">
+                How the patient view looks and sounds
+              </h2>
             </div>
 
             <fieldset className="mt-7">
@@ -396,19 +390,19 @@ export function SetupScreen({
               />
               <ToggleRow
                 checked={colourSafe}
-                description="Uses icons and written labels so meaning never depends on colour alone."
-                label="Colour-safe status indicators"
+                description="Shows taken and not taken in blue and orange in place of green and red. An icon and the words are always shown as well, whatever this is set to."
+                label="Colours that do not rely on red and green"
                 onChange={() => setColourSafe((value) => !value)}
               />
               <ToggleRow
                 checked={simplifiedLayout}
-                description="Reduces secondary information and keeps one clear action per section."
-                label="Simplified patient layout"
+                description="Shows the next medicine and how to reach you, and leaves out the list of the day’s other medicines."
+                label="Simplified patient view"
                 onChange={() => setSimplifiedLayout((value) => !value)}
               />
               <ToggleRow
                 checked={reducedMotion}
-                description="Removes non-essential transitions and animated movement."
+                description="Stops the sliding and fading between states, on every page of the app. If this device is already set to reduce motion, that is followed whatever this is set to."
                 label="Reduce motion"
                 onChange={() => setReducedMotion((value) => !value)}
               />
@@ -419,7 +413,7 @@ export function SetupScreen({
         <div className="mt-8 flex flex-col justify-end gap-3 rounded-2xl bg-inverse p-5 sm:flex-row">
           <button
             className="min-h-12 rounded-xl border-2 border-on-inverse px-5 text-sm font-bold text-on-inverse hover:bg-on-inverse/10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse"
-            onClick={() => setScreen("patient")}
+            onClick={() => goTo("patient")}
             type="button"
           >
             Preview patient view
@@ -428,9 +422,8 @@ export function SetupScreen({
             className="min-h-12 rounded-xl bg-highlight px-6 text-sm font-bold text-on-highlight hover:bg-on-inverse focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-on-inverse"
             onClick={() => {
               if (!checkOnSubmit()) return;
-              setToast("Patient setup saved.");
-              setScreen("dashboard");
-              window.setTimeout(() => setToast(""), 2800);
+              flashToast("Patient setup saved.");
+              goTo("dashboard");
             }}
             type="button"
           >

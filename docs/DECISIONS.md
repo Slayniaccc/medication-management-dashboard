@@ -476,4 +476,90 @@ The cost is stated in the test file and here: jsdom has no layout, so axe's cont
 
 The test time zone is fixed to Europe/London in the Vite config, because the daylight saving tests need a zone where the clocks change and must give the same answer on a laptop and in CI. `Root` moved out of `main.tsx` into its own file so the tests render the real skip link and live region instead of a copy.
 
-**Also done here.** `vite.config.ts` was three hundred lines of Figma Make preview plugins. They are gone, `index.html` is a plain document with a real title and language, and the package is no longer named `figma-make-app`. Nothing in the app used them.
+**Also done here (tooling).** `vite.config.ts` was three hundred lines of Figma Make preview plugins. They are gone, `index.html` is a plain document with a real title and language, and the package is no longer named `figma-make-app`. Nothing in the app used them.
+
+---
+
+## 2026-10-11: A new device starts empty, and the example is something the carer chooses
+
+**Decision.** A new database is created with nothing in it. The app opens on a welcome page that asks for two names, the carer's and the person they support, and offers a second way on: "Load the example". The example is a made-up week for Asha and Meera, and while it is loaded every carer page says so and Settings offers to clear it. This replaces the earlier decision to seed demo data when the database is created.
+
+**Alternative.** Keep seeding on creation, so every visitor meets Asha's routine. Or start empty with no example at all.
+
+**Why.** The earlier entry said starting empty was the right end state and seeding was kept only because there was no first run. Seeded data in a real carer's tool is someone else's medicines presented as hers, with no way to remove them. Starting empty with no example fails the other audience: someone opening the deployed copy to see what the model does would meet a blank page. Making the example a choice serves both, and the app never holds made-up data nobody asked for.
+
+First run is not a stored flag. It is worked out: no medicines, no events and no names. A flag could disagree with the data, and this is the same rule as pending being an absence. The welcome form holds its two names in the component until Start is pressed, so a half-typed name is not stored and does not end the first run on the first keystroke.
+
+**How the swap works.** `Repository.replaceAll(snapshot)` clears the stores and writes a snapshot in one transaction. `Root` calls it and then starts `App` again from that snapshot with a new `key`, moves focus to the new heading and announces the view. Teaching each state hook to reset itself was the alternative, and it would have been four reset paths to keep right for something that happens twice in the life of an installation. `replaceAll` is used for the example only, never on a carer's own data, and the interface says so.
+
+**Clearing is destructive, so it is confirmed and can be put back.** It takes two presses, focus lands on "Keep the example" so a repeated key press is safe, and the welcome page offers the example again. What is lost is anything logged on top of the made-up data.
+
+**The example week.** Six days of logged doses ending yesterday, relative to the day it is loaded, with today left to log. It contains a dose logged within minutes of its time, one logged exactly four hours late, two not given with their reasons stored (did not want it, asleep), and Medicine 2 moved from 8:30 to 9:00 three days ago by closing one schedule and opening another. The Reminders page shows that change in words, worked out from the two schedules sharing a date, and the log shows the earlier doses still at 8:30. Medicine names are "Medicine 1" to "Medicine 3". `snapshots.test.ts` checks each of these, so the example cannot quietly stop demonstrating the model.
+
+**Not done here.** A database made before this change still holds the old seeded data and is not marked as an example.
+
+---
+
+## 2026-10-11: Controls that did nothing are removed, and the emergency contacts screen with them
+
+**Decision.** Removed: the emergency contacts screen, "Remind me in 10 min" (twice), "Edit prescription", "Export log", "View notifications" with its permanent red dot, the reminders on/off button, the email summary and sound alert switches, "Contact support", the hardcoded patient reference and access level, and the hidden dashboard block of invented adherence figures. `reminderOn`, `emailUpdates` and `soundAlerts` are gone from `Details`. The dashboard date and greeting are now read from the clock, where they were the fixed strings "Monday, June 16" and "Good morning".
+
+**Alternative.** Build each one out: a contacts book, snoozing, an editor, an export, notifications.
+
+**Why.** Each of these showed a message saying something had happened when nothing had. For a carer that is worse than the feature being missing: "Reminders on" and "Sound alerts" promise an alarm that will never sound, for a dose somebody is relying on. A switch held in state and read by nothing is the decoration the first invariant rules out, and the project's stated aim is something that works rather than something that demonstrates. Building them all is the growth into a general health platform that the scope rule warns against.
+
+The emergency screen was the hardest call and the clearest. It listed an on-call doctor and a community nurse that do not exist, with call buttons that called nobody, under the heading "Do not give another dose", which is clinical instruction in the app's own voice and the one thing the product boundary forbids outright. What Asha actually had there was "Contact my carer", which opened that screen. The patient view now has a real link that calls the carer's own number, as the carer entered it.
+
+**What "reminder" means now.** The word stays, because AGENTS.md is right that it is Meera's word for a time a medicine is due. But the app has never sounded an alarm, so the Reminders page, the add form and Help each say plainly that the times are shown and nothing will ring. Whether to build real notifications is open and is listed under Known issues.
+
+**Kept and made real instead.** Help is now a page of what the app does and does not do, with links into it. Settings says where the data is kept and holds the example's clear button. Every view is in one navigation list used by the sidebar and the phone layout, so Help and the carer's own details can be reached on a phone, which they could not before. The dashboard uses the shared `CarerPage` shell like the other carer pages.
+
+---
+
+## 2026-10-11: Removing a prescription asks first and can be undone from a list
+
+**Decision.** "Remove" opens a question in place of the button, with focus on "Keep". After removing, the medicine appears under "Removed prescriptions" on the same page with an "Add back" button. Adding back creates new schedules from today at the times the medicine was last on. The ended schedules stay ended.
+
+**Alternative.** An undo button in the confirmation toast. Or reopen the closed schedules by clearing their end dates.
+
+**Why.** This was the known break of the destructive actions invariant. An undo that lives in a message which disappears is not recoverable for someone tired and interrupted, which is the person the invariant names. A list is still there tomorrow. Reopening a closed schedule would be an edit in place: if it had been ended on Monday and reopened on Thursday, Tuesday and Wednesday would resolve as doses that were due and never logged. New schedules from today leave the gap as a gap.
+
+---
+
+## 2026-10-11: The dialogs are native modal dialogs, rendered inside the view that opened them
+
+**Decision.** `Dialog` is a `<dialog>` opened with `showModal()`. The add prescription and reason dialogs are passed as children to the dashboard, the prescriptions page and the patient view, and open over whichever one asked.
+
+**Alternative.** Keep the `div` with `role="dialog"` and write the focus trap, Escape handling, background inertness and focus return by hand. Keep sending every dialog to the dashboard.
+
+**Why.** The old shell did none of those four things, so a keyboard user opened a dialog and stayed behind it. The browser does all four for a modal `<dialog>`, which is the prefer-native convention applied to the element that needed it most. Opening over the current view means focus returns to the button that was pressed, where before the view changed underneath. For the patient view it also means the dialog sits inside the element carrying Asha's theme and text size, so it is shown in her high contrast and large text, where a dialog on the carer dashboard was not.
+
+When the patient is the one logging, the reason dialog now uses the patient's words ("I was asleep", "Why did you not take it?"). The stored reason code is the same seven. This closes the weakest call recorded on 2026-10-10.
+
+**Focus after logging.** Logging a dose replaces the buttons that were pressed with the outcome, which dropped focus to the top of the document on the app's main action. The dashboard now moves focus to the outcome, and the patient view to the next medicine's heading.
+
+---
+
+## 2026-10-11: A prescription is what the carer typed, including its name
+
+**Decision.** The add form asks for the medicine name, strength, amount each time and times, with what it is for and a note as optional. Nothing is filled in by the app. The note is shown everywhere as "Meera's note: ...", using the carer's name.
+
+**Alternative.** Keep naming new medicines "Medicine 4" with the purpose "New prescription".
+
+**Why.** A numbered name works in a demo and is useless to a carer with a real box in her hand. An app-written purpose is placeholder data that makes the app look like the source of medicine information, which is the wrong side of the notebook line. Attribution on the carer's own screens as well as the patient view keeps one rule: an instruction is always shown as somebody's note. The times are still chosen from four fixed options, which is listed under Known issues.
+
+---
+
+## 2026-10-11: The copy pass
+
+**Decision.** One word per action through its flow: Given and Not given are logged ("Dose logged as given", "Log as not given", "Medicine log"); a prescription is added, removed and added back, and the messages say "Prescription added", "Prescription removed", "Prescription added back". The patient view keeps its own words, taken and recorded, because Asha is the one speaking there.
+
+**What changed and why.**
+
+- Instruction in the app's own voice is gone: "Here is what you need to do next", "Tell your carer if you feel unwell or think you took the wrong dose", "Do not give another dose", "Add every time this medicine should be given". The patient view now states what is next and whose note it is.
+- Not-given reasons are all in the third person, so "I was unable to administer the medicine" no longer appears in a log read by someone else. "Refused" became "did not want to take it", because it is Asha's choice being recorded and not a failing.
+- Labels say what the thing does. "Colour-safe status indicators" claimed to add icons and labels that are always there; it is now "Colours that do not rely on red and green". "Dosage" and "Quantity" became "Strength" and "Amount each time". Examples moved out of placeholders, which vanish on typing and are low contrast, into hint text tied to the field.
+- Empty states give the next step: where to add the first prescription, where a logged dose will appear, where a missing phone number is entered. None apologises.
+- The log says how long after its time a dose was logged when that is an hour or more, as a count ("4 hours after its time") and nothing else. It does not say late.
+- The step numbers on patient setup are gone. They ran 1, 3, 4, 2 in reading order.
+- Toasts stay for six seconds, up from under three, and the status region they appear in is always in the document so the message is announced.

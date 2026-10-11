@@ -1,9 +1,9 @@
 import { Dialog } from "../components/Dialog";
 import { FieldError } from "../components/FieldError";
-import type { NotGivenReason } from "../model/types";
+import type { NotGivenReason, RecordedBy } from "../model/types";
 import { useFormErrors } from "../state/useFormErrors";
 import type { Details } from "../storage/repository";
-import { reasonLabel } from "./format";
+import { reasonLabel, reasonLabelForPatient } from "./format";
 
 const notGivenReasons: NotGivenReason[] = [
   "refused",
@@ -18,35 +18,43 @@ const notGivenReasons: NotGivenReason[] = [
 export function NotGivenReasonDialog({
   details,
   reason,
+  recordedBy,
   saveNotGiven,
   setReason,
   setReasonFor,
 }: {
   details: Details;
   reason: NotGivenReason | "";
+  // Who is logging, which decides whose words the dialog uses.
+  recordedBy: RecordedBy;
   saveNotGiven: () => void;
   setReason: (reason: NotGivenReason) => void;
   setReasonFor: (value: null) => void;
 }) {
-  const { patientName } = details;
+  const { carerName, patientName } = details;
+  const forPatient = recordedBy === "patient";
   // The error belongs to the whole group, and focus goes to its first option.
   const firstReasonId = `reason-${notGivenReasons[0]}`;
   const { checkOnSubmit, errors } = useFormErrors(
-    reason ? {} : { [firstReasonId]: "Choose the reason this dose was not given." },
+    reason
+      ? {}
+      : {
+          [firstReasonId]: forPatient
+            ? "Choose the reason you did not take it."
+            : "Choose the reason this dose was not given.",
+        },
   );
 
   return (
     <Dialog
-      closeLabel="Close"
+      closeLabel="Close without logging"
       header={
         <>
-          <p className="text-sm font-bold text-not-given">Dose not given</p>
-          <h2 id="reason-title" className="mt-1 text-2xl font-bold">
-            Why was this dose not given?
+          <h2 id="reason-title" className="text-2xl font-bold">
+            {forPatient ? "Why did you not take it?" : "Why was this dose not given?"}
           </h2>
           <p className="mt-2 text-base leading-6 text-ink-muted">
-            Record what happened when you offered this medicine to {patientName}.
-            This information will be added to the patient’s care log.
+            The reason is kept with the dose in the medicine log.
           </p>
         </>
       }
@@ -62,11 +70,11 @@ export function NotGivenReasonDialog({
         role="radiogroup"
       >
         <legend className="sr-only">
-          Reason the dose was not given to {patientName}
+          {forPatient ? "Reason you did not take it" : "Reason the dose was not given"}
         </legend>
         {notGivenReasons.map((option) => (
           <label
-            className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 text-sm font-semibold transition ${
+            className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-2 text-base font-bold transition focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-focus ${
               reason === option
                 ? "border-accent bg-accent-subtle text-ink"
                 : "border-line-strong hover:bg-surface-muted"
@@ -75,34 +83,36 @@ export function NotGivenReasonDialog({
           >
             <input
               checked={reason === option}
-              className="h-5 w-5 accent-accent"
+              className="h-5 w-5 shrink-0 accent-accent"
               id={`reason-${option}`}
-              name="missed-reason"
+              name="not-given-reason"
               onChange={() => setReason(option)}
               type="radio"
               value={option}
             />
-            {reasonLabel(option, patientName)}
+            {forPatient
+              ? reasonLabelForPatient(option, carerName)
+              : reasonLabel(option, patientName, carerName)}
           </label>
         ))}
       </fieldset>
       <FieldError id="reason-error" message={errors[firstReasonId]} />
-      <div className="mt-7 flex gap-3">
+      <div className="mt-7 flex flex-wrap gap-3">
         <button
-          className="min-h-12 flex-1 rounded-xl border border-line-strong px-4 text-sm font-bold hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className="min-h-12 flex-1 rounded-xl border-2 border-line-strong px-4 text-base font-bold hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
           onClick={() => setReasonFor(null)}
           type="button"
         >
           Cancel
         </button>
         <button
-          className="min-h-12 flex-1 rounded-xl bg-primary px-4 text-sm font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
+          className="min-h-12 flex-1 rounded-xl bg-primary px-4 text-base font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
           onClick={() => {
             if (checkOnSubmit()) saveNotGiven();
           }}
           type="button"
         >
-          Save to care log
+          Log as not given
         </button>
       </div>
     </Dialog>

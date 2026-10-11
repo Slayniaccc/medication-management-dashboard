@@ -28,9 +28,8 @@ export type Details = {
   colourSafe: boolean;
   reducedMotion: boolean;
   simplifiedLayout: boolean;
-  reminderOn: boolean;
-  emailUpdates: boolean;
-  soundAlerts: boolean;
+  /** True while this device holds the made-up example, so the app can say so and offer to clear it. */
+  exampleData: boolean;
 };
 
 /** Everything that is kept, as read back when the app starts. */
@@ -60,4 +59,9 @@ export interface Repository {
   /** Stores an event at its occurrence key, replacing any event already there. */
   recordDose(event: DoseEvent): Promise<void>;
   saveDetails(details: Details): Promise<void>;
+  /**
+   * Replaces everything that is kept with this snapshot, all or nothing. Used
+   * to load the example and to clear it again, never on a carer's own data.
+   */
+  replaceAll(snapshot: Snapshot): Promise<void>;
 }

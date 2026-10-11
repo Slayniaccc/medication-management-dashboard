@@ -6,11 +6,11 @@ import type { Repository, Snapshot } from "./repository";
  * will not open a database, so the app still works for the visit and can say
  * plainly that nothing is being kept.
  */
-export function createMemoryRepository(seed: Snapshot): Repository {
-  const medications = new Map(seed.medications.map((item) => [item.id, item]));
-  const schedules = new Map(seed.schedules.map((item) => [item.id, item]));
-  const events = new Map(seed.events.map((item) => [occurrenceKey(item), item]));
-  let details = seed.details;
+export function createMemoryRepository(initial: Snapshot): Repository {
+  let medications = new Map(initial.medications.map((item) => [item.id, item]));
+  let schedules = new Map(initial.schedules.map((item) => [item.id, item]));
+  let events = new Map(initial.events.map((item) => [occurrenceKey(item), item]));
+  let details = initial.details;
 
   return {
     durable: false,
@@ -39,6 +39,13 @@ export function createMemoryRepository(seed: Snapshot): Repository {
 
     async saveDetails(next) {
       details = next;
+    },
+
+    async replaceAll(snapshot) {
+      medications = new Map(snapshot.medications.map((item) => [item.id, item]));
+      schedules = new Map(snapshot.schedules.map((item) => [item.id, item]));
+      events = new Map(snapshot.events.map((item) => [occurrenceKey(item), item]));
+      details = snapshot.details;
     },
   };
 }

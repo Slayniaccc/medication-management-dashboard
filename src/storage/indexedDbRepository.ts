@@ -1,5 +1,5 @@
 import type { DoseEvent, Medication, Schedule } from "../model/types";
-import type { Details, Repository, Snapshot } from "./repository";
+import type { Details, Repository } from "./repository";
 
 const DATABASE = "accesscare";
 const VERSION = 1;
@@ -31,21 +31,17 @@ function completed(transaction: IDBTransaction): Promise<void> {
   });
 }
 
-function openDatabase(seed: Snapshot): Promise<IDBDatabase> {
+function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DATABASE, VERSION);
+    // A new database starts empty. The example is only ever written because
+    // the carer asked for it, through replaceAll.
     request.onupgradeneeded = () => {
       const database = request.result;
-      const medications = database.createObjectStore(MEDICATIONS, { keyPath: "id" });
-      const schedules = database.createObjectStore(SCHEDULES, { keyPath: "id" });
-      const events = database.createObjectStore(DOSE_EVENTS, { keyPath: DOSE_EVENT_KEY });
-      const details = database.createObjectStore(DETAILS);
-      // Seeded in the transaction that creates the stores, so it happens once
-      // and a database is never left created but empty.
-      for (const medication of seed.medications) medications.put(medication);
-      for (const schedule of seed.schedules) schedules.put(schedule);
-      for (const event of seed.events) events.put(event);
-      details.put(seed.details, DETAILS_KEY);
+      database.createObjectStore(MEDICATIONS, { keyPath: "id" });
+      database.createObjectStore(SCHEDULES, { keyPath: "id" });
+      database.createObjectStore(DOSE_EVENTS, { keyPath: DOSE_EVENT_KEY });
+      database.createObjectStore(DETAILS);
     };
     request.onsuccess = () => {
       const database = request.result;
@@ -58,11 +54,12 @@ function openDatabase(seed: Snapshot): Promise<IDBDatabase> {
 }
 
 /**
- * Opens the database on this device, creating and seeding it the first time.
+ * Opens the database on this device, creating it empty the first time.
+ * `defaults` is what the details are until the carer enters their own.
  * Rejects when the browser has no IndexedDB or refuses to open it.
  */
-export async function openIndexedDbRepository(seed: Snapshot): Promise<Repository> {
-  const database = await openDatabase(seed);
+export async function openIndexedDbRepository(defaults: Details): Promise<Repository> {
+  const database = await openDatabase();
 
   const write = (stores: string[], put: (transaction: IDBTransaction) => void) => {
     const transaction = database.transaction(stores, "readwrite");
@@ -85,7 +82,7 @@ export async function openIndexedDbRepository(seed: Snapshot): Promise<Repositor
         result<Partial<Details> | undefined>(transaction.objectStore(DETAILS).get(DETAILS_KEY)),
       ]);
       // A field added after the record was stored takes its default.
-      return { medications, schedules, events, details: { ...seed.details, ...details } };
+      return { medications, schedules, events, details: { ...defaults, ...details } };
     },
 
     addPrescription(medication, schedules) {
@@ -110,6 +107,21 @@ export async function openIndexedDbRepository(seed: Snapshot): Promise<Repositor
     saveDetails(details) {
       return write([DETAILS], (transaction) => {
         transaction.objectStore(DETAILS).put(details, DETAILS_KEY);
+      });
+    },
+
+    // One transaction, so a failure part way leaves what was there before.
+    replaceAll(snapshot) {
+      return write([MEDICATIONS, SCHEDULES, DOSE_EVENTS, DETAILS], (transaction) => {
+        const medications = transaction.objectStore(MEDICATIONS);
+        const schedules = transaction.objectStore(SCHEDULES);
+        const events = transaction.objectStore(DOSE_EVENTS);
+        const details = transaction.objectStore(DETAILS);
+        for (const store of [medications, schedules, events, details]) store.clear();
+        for (const medication of snapshot.medications) medications.put(medication);
+        for (const schedule of snapshot.schedules) schedules.put(schedule);
+        for (const event of snapshot.events) events.put(event);
+        details.put(snapshot.details, DETAILS_KEY);
       });
     },
   };

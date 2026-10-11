@@ -1,19 +1,18 @@
 import { useState } from "react";
-import { isTimeOfDay, type TimeOfDay } from "../model/time";
+import { isTimeOfDay } from "../model/time";
+import type { NewPrescription } from "./useRoutine";
 
 // The add prescription dialog: whether it is open and what has been typed
 // into it so far. Not kept, so a refresh clears it.
 export function usePrescriptionDraft({
   addPrescription,
 }: {
-  addPrescription: (prescription: {
-    form: string;
-    imageUrl: string | undefined;
-    strength: string;
-    times: TimeOfDay[];
-  }) => void;
+  addPrescription: (prescription: NewPrescription) => void;
 }) {
   const [showAddPrescription, setShowAddPrescription] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPurpose, setNewPurpose] = useState("");
+  const [newNote, setNewNote] = useState("");
   const [newDosage, setNewDosage] = useState("");
   const [newQuantity, setNewQuantity] = useState("");
   const [newTimes, setNewTimes] = useState([""]);
@@ -21,14 +20,20 @@ export function usePrescriptionDraft({
 
   const savePrescription = () => {
     const times = [...new Set(newTimes.filter(isTimeOfDay))];
-    if (!newDosage || !newQuantity || times.length === 0) return;
+    if (!newName.trim() || !newDosage.trim() || !newQuantity.trim() || times.length === 0) return;
     addPrescription({
-      form: newQuantity,
+      form: newQuantity.trim(),
       imageUrl: medicineImage || undefined,
-      strength: newDosage,
+      name: newName.trim(),
+      note: newNote.trim(),
+      purpose: newPurpose.trim(),
+      strength: newDosage.trim(),
       times,
     });
     setShowAddPrescription(false);
+    setNewName("");
+    setNewPurpose("");
+    setNewNote("");
     setNewDosage("");
     setNewQuantity("");
     setNewTimes([""]);
@@ -38,14 +43,22 @@ export function usePrescriptionDraft({
   return {
     medicineImage,
     newDosage,
+    newName,
+    newNote,
+    newPurpose,
     newQuantity,
     newTimes,
     savePrescription,
     setMedicineImage,
     setNewDosage,
+    setNewName,
+    setNewNote,
+    setNewPurpose,
     setNewQuantity,
     setNewTimes,
     setShowAddPrescription,
     showAddPrescription,
   };
 }
+
+export type PrescriptionDraft = ReturnType<typeof usePrescriptionDraft>;

@@ -1,97 +1,85 @@
-import type { Dispatch, SetStateAction } from "react";
 import { Icon } from "../components/Icon";
-import { ToggleRow } from "../components/ToggleRow";
 import type { Medication, Schedule } from "../model/types";
 import type { Details } from "../storage/repository";
 import { CarerPage, type CarerPageShell } from "./CarerPage";
-import { formatTime } from "./format";
+import { dayLabel, formatTime } from "./format";
 
 export function RemindersScreen({
   activeSchedules,
   details,
   medicationById,
-  setReminderOn,
-  setSoundAlerts,
-  setToast,
+  now,
+  schedules,
   shell,
 }: {
   activeSchedules: Schedule[];
   details: Details;
   medicationById: Map<string, Medication>;
-  setReminderOn: Dispatch<SetStateAction<boolean>>;
-  setSoundAlerts: Dispatch<SetStateAction<boolean>>;
-  setToast: (message: string) => void;
+  now: Date;
+  // Every schedule, including ended ones, so a change of time can be shown.
+  schedules: Schedule[];
   shell: CarerPageShell;
 }) {
-  const { patientName, reminderOn, soundAlerts } = details;
+  const patient = details.patientName || "the person you support";
+
+  // A time is never edited: the old schedule is ended and a new one starts on
+  // the same date. So the schedule this one replaced is the one for the same
+  // medicine that ended the day this one began.
+  const replacedBy = (schedule: Schedule) =>
+    schedules.find(
+      (other) =>
+        other.medicationId === schedule.medicationId &&
+        other.endDate === schedule.startDate &&
+        other.timeOfDay !== schedule.timeOfDay &&
+        other.startDate < schedule.startDate,
+    );
 
   return (
     <CarerPage
       {...shell}
-      description={`Review and manage every medication reminder for ${patientName}.`}
+      description={`The times of day each of ${patient}’s medicines is due. They are shown here and on the dashboard. AccessCare does not sound an alarm or send a notification.`}
       eyebrow="Daily schedule"
       title="Reminders"
     >
-      <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <section aria-labelledby="reminder-list-heading" className="space-y-4">
-          <h2 id="reminder-list-heading" className="sr-only">
-            Scheduled reminders
-          </h2>
+      {activeSchedules.length === 0 ? (
+        <p className="rounded-2xl border-2 border-dashed border-line-strong bg-surface p-6 text-base leading-7 text-ink-soft">
+          No reminder times yet. They are set when you add a prescription, from the
+          Prescriptions page.
+        </p>
+      ) : (
+        <ul className="space-y-4">
           {activeSchedules.map((schedule) => {
             const medication = medicationById.get(schedule.medicationId);
             if (!medication) return null;
+            const previous = replacedBy(schedule);
             return (
-              <article
-                className="flex flex-col gap-5 rounded-2xl border border-line bg-surface p-5 sm:flex-row sm:items-center"
+              <li
+                className="flex items-start gap-5 rounded-2xl border border-line bg-surface p-5"
                 key={schedule.id}
               >
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
-                  <Icon name="bell" />
+                  <Icon name="clock" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xl font-bold">{formatTime(schedule.timeOfDay)}</p>
-                  <p className="mt-1 font-bold">{medication.name}</p>
-                  <p className="mt-1 text-sm text-ink-muted">
-                    {medication.strength} · {medication.form}
+                  <h2 className="text-xl font-bold">
+                    {formatTime(schedule.timeOfDay)} · {medication.name}
+                  </h2>
+                  <p className="mt-1 text-base text-ink-muted">
+                    {medication.strength} · {medication.form} · Every day
                   </p>
+                  {previous && (
+                    <p className="mt-2 text-base text-ink-soft">
+                      Changed from {formatTime(previous.timeOfDay)}{" "}
+                      {dayLabel(schedule.startDate, now).toLowerCase()}. Doses logged before the
+                      change stay in the medicine log at {formatTime(previous.timeOfDay)}.
+                    </p>
+                  )}
                 </div>
-                <button
-                  className="min-h-12 rounded-xl border-2 border-accent px-4 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus"
-                  onClick={() => {
-                    setToast(`${medication.name} reminder moved by 10 minutes.`);
-                    window.setTimeout(() => setToast(""), 2800);
-                  }}
-                  type="button"
-                >
-                  Remind in 10 min
-                </button>
-              </article>
+              </li>
             );
           })}
-        </section>
-        <section
-          aria-labelledby="reminder-controls-heading"
-          className="rounded-2xl border border-line bg-surface p-6"
-        >
-          <h2 id="reminder-controls-heading" className="text-xl font-bold">
-            Reminder controls
-          </h2>
-          <div className="mt-4">
-            <ToggleRow
-              checked={reminderOn}
-              description="Send medication reminders to the carer dashboard."
-              label="Medication reminders"
-              onChange={() => setReminderOn((value) => !value)}
-            />
-            <ToggleRow
-              checked={soundAlerts}
-              description="Play a sound with high-priority reminders."
-              label="Sound alerts"
-              onChange={() => setSoundAlerts((value) => !value)}
-            />
-          </div>
-        </section>
-      </div>
+        </ul>
+      )}
     </CarerPage>
   );
 }

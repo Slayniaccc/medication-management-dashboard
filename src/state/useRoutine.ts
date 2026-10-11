@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { doseStatus, occurrencesOn, recordDose } from "../model/doses";
 import { closeSchedule, isInForce } from "../model/schedules";
-import { localDateOf, toInstant, type TimeOfDay } from "../model/time";
+import { localDateOf, toInstant, type LocalDate, type TimeOfDay } from "../model/time";
 import type {
   DoseEvent,
   Medication,
+  MedicationColour,
   NotGivenReason,
   OccurrenceKey,
   RecordedBy,
@@ -12,6 +13,18 @@ import type {
 } from "../model/types";
 import { formatTime } from "../screens/format";
 import type { Repository, Snapshot } from "../storage/repository";
+
+const colours: MedicationColour[] = ["coral", "teal", "ochre", "indigo"];
+
+export type NewPrescription = {
+  form: string;
+  imageUrl: string | undefined;
+  name: string;
+  note: string;
+  purpose: string;
+  strength: string;
+  times: TimeOfDay[];
+};
 
 // The medicines, when they are due and what has been logged against them,
 // with everything the screens read worked out from those three and the clock.
@@ -59,6 +72,28 @@ export function useRoutine({
       .filter((schedule) => schedule.medicationId === medicationId)
       .map((schedule) => formatTime(schedule.timeOfDay));
 
+  // The schedules a removed medicine was last on: the ones that ended latest.
+  const lastSchedulesOf = (medicationId: string) => {
+    const ended = schedules.filter(
+      (schedule) => schedule.medicationId === medicationId && schedule.endDate !== null,
+    );
+    const removedOn = ended.reduce<LocalDate | null>(
+      (latest, schedule) =>
+        latest === null || schedule.endDate! > latest ? schedule.endDate : latest,
+      null,
+    );
+    return { removedOn, last: ended.filter((schedule) => schedule.endDate === removedOn) };
+  };
+  // Removing is undone from this list, so it does not depend on catching a
+  // message before it goes.
+  const removedPrescriptions = medications.flatMap((medication) => {
+    if (activeMedications.includes(medication)) return [];
+    const { removedOn, last } = lastSchedulesOf(medication.id);
+    return removedOn === null
+      ? []
+      : [{ medication, removedOn, times: last.map((item) => formatTime(item.timeOfDay)).sort() }];
+  });
+
   const markGiven = ({ medicationId, date, timeOfDay }: OccurrenceKey, recordedBy: RecordedBy) => {
     const event: DoseEvent = {
       medicationId,
@@ -89,20 +124,18 @@ export function useRoutine({
     };
     setEvents((items) => recordDose(items, event));
     save(repository.recordDose(event));
-    flashToast("Not-given dose and reason saved.");
+    flashToast("Dose logged as not given, with the reason.");
   };
 
   const addPrescription = ({
     form,
     imageUrl,
+    name,
+    note,
+    purpose,
     strength,
     times,
-  }: {
-    form: string;
-    imageUrl: string | undefined;
-    strength: string;
-    times: TimeOfDay[];
-  }) => {
+  }: NewPrescription) => {
     const medicationId = crypto.randomUUID();
     const added: Schedule[] = times.map((timeOfDay) => ({
       id: crypto.randomUUID(),
@@ -111,21 +144,22 @@ export function useRoutine({
       startDate: today,
       endDate: null,
     }));
+    // Everything here is what the carer typed. Nothing is filled in for them.
     const medication: Medication = {
       id: medicationId,
-      name: `Medicine ${medications.length + 1}`,
-      purpose: "New prescription",
+      name,
+      purpose,
       strength,
       form,
-      instructions: "",
+      instructions: note,
       carerNotes: "",
-      colour: "indigo",
+      colour: colours[medications.length % colours.length],
       imageUrl,
     };
     setMedications((items) => [...items, medication]);
     setSchedules((items) => [...items, ...added]);
     save(repository.addPrescription(medication, added));
-    flashToast("New prescription added.");
+    flashToast("Prescription added.");
   };
 
   // Ends the medicine's schedules from today rather than deleting anything, so
@@ -145,21 +179,40 @@ export function useRoutine({
     setSchedules(closed);
     // closeSchedule leaves untouched schedules as the same objects.
     save(repository.saveSchedules(closed.filter((schedule) => !schedules.includes(schedule))));
+    flashToast("Prescription removed.");
+  };
+
+  // Puts a removed medicine back on the times it was last on. The ended
+  // schedules stay ended and new ones start today, so nothing is reopened.
+  const addBackPrescription = (medicationId: string) => {
+    const added: Schedule[] = lastSchedulesOf(medicationId).last.map((schedule) => ({
+      id: crypto.randomUUID(),
+      medicationId,
+      timeOfDay: schedule.timeOfDay,
+      startDate: today,
+      endDate: null,
+    }));
+    if (added.length === 0) return;
+    setSchedules((items) => [...items, ...added]);
+    save(repository.saveSchedules(added));
+    flashToast("Prescription added back.");
   };
 
   return {
     activeMedications,
     activeSchedules,
+    addBackPrescription,
     addPrescription,
     events,
     markGiven,
     markNotGiven,
     medicationById,
-    medications,
     nextDose,
     nextMedication,
     reminderTimesFor,
     removePrescription,
+    removedPrescriptions,
+    schedules,
     todaysDoses,
     todaysRows,
   };

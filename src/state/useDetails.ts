@@ -44,9 +44,6 @@ export function useDetails({
   const [colourSafe, setColourSafe] = useState(initial.colourSafe);
   const [reducedMotion, setReducedMotion] = useState(initial.reducedMotion);
   const [simplifiedLayout, setSimplifiedLayout] = useState(initial.simplifiedLayout);
-  const [reminderOn, setReminderOn] = useState(initial.reminderOn);
-  const [emailUpdates, setEmailUpdates] = useState(initial.emailUpdates);
-  const [soundAlerts, setSoundAlerts] = useState(initial.soundAlerts);
   // Whether the carer's own details are open for editing. Not kept.
   const [editingCarer, setEditingCarer] = useState(false);
 
@@ -72,9 +69,8 @@ export function useDetails({
     colourSafe,
     reducedMotion,
     simplifiedLayout,
-    reminderOn,
-    emailUpdates,
-    soundAlerts,
+    // Only changed by loading or clearing the example, which replaces everything.
+    exampleData: initial.exampleData,
   };
   const storedDetails = useRef(initial);
   useEffect(() => {
@@ -90,7 +86,7 @@ export function useDetails({
   }, [reducedMotion]);
 
   return {
-    carerInitials: initialsOf(carerName, "CJ"),
+    carerInitials: initialsOf(carerName, "C"),
     details,
     editingCarer,
     patientInitials: initialsOf(patientName, "P"),
@@ -106,16 +102,13 @@ export function useDetails({
     setConsentMethod,
     setDisabilities,
     setEditingCarer,
-    setEmailUpdates,
     setMedicalNeeds,
     setPatientAge,
     setPatientName,
     setPatientTheme,
     setReadAloud,
     setReducedMotion,
-    setReminderOn,
     setSimplifiedLayout,
-    setSoundAlerts,
     setTextSize,
   };
 }

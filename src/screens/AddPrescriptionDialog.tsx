@@ -1,43 +1,41 @@
-import type { Dispatch, SetStateAction } from "react";
 import { Dialog } from "../components/Dialog";
 import { FieldError } from "../components/FieldError";
 import { Icon } from "../components/Icon";
 import type { TimeOfDay } from "../model/time";
-import type { Medication } from "../model/types";
 import { useFormErrors, type FormErrors } from "../state/useFormErrors";
+import type { PrescriptionDraft } from "../state/usePrescriptionDraft";
 import { formatTime } from "./format";
 
 const reminderTimeOptions: TimeOfDay[] = ["08:00", "12:00", "18:00", "21:00"];
 
-export function AddPrescriptionDialog({
-  medications,
-  medicineImage,
-  newDosage,
-  newQuantity,
-  newTimes,
-  savePrescription,
-  setMedicineImage,
-  setNewDosage,
-  setNewQuantity,
-  setNewTimes,
-  setShowAddPrescription,
-}: {
-  medications: Medication[];
-  medicineImage: string;
-  newDosage: string;
-  newQuantity: string;
-  newTimes: string[];
-  savePrescription: () => void;
-  setMedicineImage: (image: string) => void;
-  setNewDosage: (value: string) => void;
-  setNewQuantity: (value: string) => void;
-  setNewTimes: Dispatch<SetStateAction<string[]>>;
-  setShowAddPrescription: (show: boolean) => void;
-}) {
+const fieldClass =
+  "min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus aria-[invalid=true]:border-danger";
+
+export function AddPrescriptionDialog({ draft }: { draft: PrescriptionDraft }) {
+  const {
+    medicineImage,
+    newDosage,
+    newName,
+    newNote,
+    newPurpose,
+    newQuantity,
+    newTimes,
+    savePrescription,
+    setMedicineImage,
+    setNewDosage,
+    setNewName,
+    setNewNote,
+    setNewPurpose,
+    setNewQuantity,
+    setNewTimes,
+    setShowAddPrescription,
+  } = draft;
+
   const found: FormErrors = {};
-  if (!newDosage.trim()) found["prescription-dosage"] = "Enter the dosage, for example 20 mg.";
+  if (!newName.trim()) found["prescription-name"] = "Enter the name of the medicine.";
+  if (!newDosage.trim()) found["prescription-dosage"] = "Enter the strength, for example 20 mg.";
   if (!newQuantity.trim()) {
-    found["prescription-quantity"] = "Enter the quantity, for example 1 tablet.";
+    found["prescription-quantity"] = "Enter the amount each time, for example 1 tablet.";
   }
   newTimes.forEach((time, index) => {
     if (time) return;
@@ -48,19 +46,48 @@ export function AddPrescriptionDialog({
   });
   const { checkOnSubmit, errors } = useFormErrors(found);
 
+  // The three required text fields are the same markup with different words.
+  const textField = (
+    id: string,
+    label: string,
+    hint: string,
+    value: string,
+    onChange: (value: string) => void,
+    required: boolean,
+  ) => (
+    <div>
+      <label className="mb-2 block text-base font-bold" htmlFor={id}>
+        {label}
+        {!required && <span className="font-normal text-ink-muted"> (optional)</span>}
+      </label>
+      <p className="mb-2 text-sm text-ink-muted" id={`${id}-hint`}>
+        {hint}
+      </p>
+      <input
+        aria-describedby={errors[id] ? `${id}-hint ${id}-error` : `${id}-hint`}
+        aria-invalid={errors[id] ? true : undefined}
+        aria-required={required ? "true" : undefined}
+        className={fieldClass}
+        id={id}
+        onChange={(event) => onChange(event.target.value)}
+        type="text"
+        value={value}
+      />
+      <FieldError id={`${id}-error`} message={errors[id]} />
+    </div>
+  );
+
   return (
     <Dialog
-      closeLabel="Close add prescription dialog"
+      closeLabel="Close without adding"
       header={
         <>
-          <p className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
-            Manage prescriptions
-          </p>
-          <h2 id="prescription-title" className="mt-1 text-2xl font-bold">
-            Add a new prescription
+          <h2 id="prescription-title" className="text-2xl font-bold">
+            Add a prescription
           </h2>
           <p className="mt-2 text-base text-ink-muted">
-            The prescription will be added as Medicine {medications.length + 1}.
+            Copy the details from the label or the prescription. AccessCare keeps what you type
+            and shows it back to you. It does not check it.
           </p>
         </>
       }
@@ -69,102 +96,39 @@ export function AddPrescriptionDialog({
       width="wide"
     >
       <div className="mt-6 space-y-5">
-        <label className="block">
-          <span className="mb-2 block text-base font-bold">
-            Medicine photo <span className="font-normal text-ink-muted">(optional)</span>
-          </span>
-          <span className="flex min-h-28 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-line-strong bg-surface-muted p-4 text-center transition hover:bg-surface-sunken focus-within:border-accent focus-within:ring-3 focus-within:ring-accent-line">
-            <input
-              accept="image/*"
-              className="sr-only"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (!file) return;
-                // Read into the record itself. An object URL only points at
-                // this page's memory and would be dead after a refresh.
-                const reader = new FileReader();
-                reader.onload = () => setMedicineImage(String(reader.result));
-                reader.readAsDataURL(file);
-              }}
-              type="file"
-            />
-            {medicineImage ? (
-              <span className="flex items-center gap-4">
-                <img
-                  alt="Selected medicine preview"
-                  className="h-20 w-20 rounded-xl border border-line-strong object-cover"
-                  src={medicineImage}
-                />
-                <span className="text-left">
-                  <span className="block font-bold text-ink">Photo added</span>
-                  <span className="mt-1 block text-sm text-ink-muted">
-                    Select to choose a different photo
-                  </span>
-                </span>
-              </span>
-            ) : (
-              <span>
-                <Icon name="image" className="mx-auto h-7 w-7 text-accent" />
-                <span className="mt-2 block font-bold text-ink">
-                  Add a photo of the medicine
-                </span>
-                <span className="mt-1 block text-sm text-ink-muted">
-                  Use a clear photo of the packaging or label
-                </span>
-              </span>
-            )}
-          </span>
-        </label>
+        {textField(
+          "prescription-name",
+          "Medicine name",
+          "As it is written on the label.",
+          newName,
+          setNewName,
+          true,
+        )}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block">
-              <span className="mb-2 block text-base font-bold">Dosage</span>
-              <input
-                aria-describedby={
-                  errors["prescription-dosage"] ? "prescription-dosage-error" : undefined
-                }
-                aria-invalid={errors["prescription-dosage"] ? true : undefined}
-                aria-required="true"
-                className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base text-ink outline-none placeholder:text-ink-muted focus:border-accent focus:ring-3 focus:ring-accent-line aria-[invalid=true]:border-danger"
-                id="prescription-dosage"
-                onChange={(event) => setNewDosage(event.target.value)}
-                placeholder="For example: 20 mg"
-                type="text"
-                value={newDosage}
-              />
-            </label>
-            <FieldError id="prescription-dosage-error" message={errors["prescription-dosage"]} />
-          </div>
-
-          <div>
-            <label className="block">
-              <span className="mb-2 block text-base font-bold">Quantity</span>
-              <input
-                aria-describedby={
-                  errors["prescription-quantity"] ? "prescription-quantity-error" : undefined
-                }
-                aria-invalid={errors["prescription-quantity"] ? true : undefined}
-                aria-required="true"
-                className="min-h-12 w-full rounded-xl border-2 border-line-strong bg-surface px-4 text-base text-ink outline-none placeholder:text-ink-muted focus:border-accent focus:ring-3 focus:ring-accent-line aria-[invalid=true]:border-danger"
-                id="prescription-quantity"
-                onChange={(event) => setNewQuantity(event.target.value)}
-                placeholder="For example: 1 tablet"
-                type="text"
-                value={newQuantity}
-              />
-            </label>
-            <FieldError
-              id="prescription-quantity-error"
-              message={errors["prescription-quantity"]}
-            />
-          </div>
+          {textField(
+            "prescription-dosage",
+            "Strength",
+            "For example 20 mg.",
+            newDosage,
+            setNewDosage,
+            true,
+          )}
+          {textField(
+            "prescription-quantity",
+            "Amount each time",
+            "For example 1 tablet.",
+            newQuantity,
+            setNewQuantity,
+            true,
+          )}
         </div>
 
         <fieldset>
           <legend className="mb-2 text-base font-bold">Reminder times</legend>
           <p className="mb-3 text-sm text-ink-muted">
-            Add every time this medicine should be given.
+            One for each time of day this medicine is due. The dose appears on the dashboard at
+            that time. AccessCare does not sound an alarm.
           </p>
           <div className="space-y-3">
             {newTimes.map((reminderTime, index) => (
@@ -179,7 +143,7 @@ export function AddPrescriptionDialog({
                     }
                     aria-invalid={errors[`reminder-${index}`] ? true : undefined}
                     aria-required="true"
-                    className="min-h-12 min-w-0 flex-1 rounded-xl border-2 border-line-strong bg-surface px-4 text-base text-ink outline-none focus:border-accent focus:ring-3 focus:ring-accent-line aria-[invalid=true]:border-danger"
+                    className={`${fieldClass} min-w-0 flex-1`}
                     id={`reminder-${index}`}
                     onChange={(event) =>
                       setNewTimes((times) =>
@@ -228,18 +192,80 @@ export function AddPrescriptionDialog({
             Add another reminder time
           </button>
         </fieldset>
+
+        {textField(
+          "prescription-purpose",
+          "What it is for",
+          "In your own words, so you can tell your medicines apart.",
+          newPurpose,
+          setNewPurpose,
+          false,
+        )}
+        {textField(
+          "prescription-note",
+          "Your note",
+          "Anything you want shown with this medicine, such as what the label says about taking it. It is shown as your note.",
+          newNote,
+          setNewNote,
+          false,
+        )}
+
+        <label className="block">
+          <span className="mb-2 block text-base font-bold">
+            Medicine photo <span className="font-normal text-ink-muted">(optional)</span>
+          </span>
+          <span className="flex min-h-28 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-line-strong bg-surface-muted p-4 text-center transition hover:bg-surface-sunken focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-focus">
+            <input
+              accept="image/*"
+              className="sr-only"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                // Read into the record itself. An object URL only points at
+                // this page's memory and would be dead after a refresh.
+                const reader = new FileReader();
+                reader.onload = () => setMedicineImage(String(reader.result));
+                reader.readAsDataURL(file);
+              }}
+              type="file"
+            />
+            {medicineImage ? (
+              <span className="flex items-center gap-4">
+                <img
+                  alt="The photo you chose"
+                  className="h-20 w-20 rounded-xl border border-line-strong object-cover"
+                  src={medicineImage}
+                />
+                <span className="text-left">
+                  <span className="block font-bold text-ink">Photo added</span>
+                  <span className="mt-1 block text-sm text-ink-muted">
+                    Select to choose a different photo
+                  </span>
+                </span>
+              </span>
+            ) : (
+              <span>
+                <Icon name="image" className="mx-auto h-7 w-7 text-accent" />
+                <span className="mt-2 block font-bold text-ink">Add a photo of the medicine</span>
+                <span className="mt-1 block text-sm text-ink-muted">
+                  The box or the label, so it is easy to recognise
+                </span>
+              </span>
+            )}
+          </span>
+        </label>
       </div>
 
-      <div className="mt-7 flex gap-3">
+      <div className="mt-7 flex flex-wrap gap-3">
         <button
-          className="min-h-12 flex-1 rounded-xl border border-line-strong px-4 text-sm font-bold hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className="min-h-12 flex-1 rounded-xl border-2 border-line-strong px-4 text-base font-bold hover:bg-surface-sunken focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
           onClick={() => setShowAddPrescription(false)}
           type="button"
         >
           Cancel
         </button>
         <button
-          className="min-h-12 flex-1 rounded-xl bg-primary px-4 text-sm font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
+          className="min-h-12 flex-1 rounded-xl bg-primary px-4 text-base font-bold text-on-primary hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-on-primary"
           onClick={() => {
             if (checkOnSubmit()) savePrescription();
           }}

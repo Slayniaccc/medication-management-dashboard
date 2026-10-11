@@ -1,41 +1,37 @@
 import { Icon } from "../components/Icon";
-import { occurrenceKey } from "../model/doses";
-import { localDateOf, wallClockDate, type LocalDate } from "../model/time";
+import { minutesAfterScheduled, occurrenceKey } from "../model/doses";
+import { localDateOf } from "../model/time";
 import type { DoseEvent, Medication } from "../model/types";
 import type { Details } from "../storage/repository";
 import { CarerPage, type CarerPageShell } from "./CarerPage";
-import { clockParts, formatTime, reasonLabel } from "./format";
+import { clockParts, dayLabel, formatTime, reasonLabel } from "./format";
 
-const daysBefore = (at: Date, days: number): LocalDate =>
-  localDateOf(new Date(at.getFullYear(), at.getMonth(), at.getDate() - days));
+// How long after its time a dose was logged, as a plain count. It is the gap
+// between two recorded times and nothing more: the log does not say whether a
+// gap matters.
+function gapLabel(event: DoseEvent) {
+  const minutes = minutesAfterScheduled(event);
+  if (minutes < 60) return null;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  const hourWords = `${hours} ${hours === 1 ? "hour" : "hours"}`;
+  return `${rest === 0 ? hourWords : `${hourWords} ${rest} min`} after its time`;
+}
 
 export function LogScreen({
   details,
   events,
   medicationById,
   now,
-  setToast,
   shell,
 }: {
   details: Details;
   events: DoseEvent[];
   medicationById: Map<string, Medication>;
   now: Date;
-  setToast: (message: string) => void;
   shell: CarerPageShell;
 }) {
   const { carerName, patientName } = details;
-  const today = localDateOf(now);
-  const dayLabel = (date: LocalDate) =>
-    date === today
-      ? "Today"
-      : date === daysBefore(now, 1)
-        ? "Yesterday"
-        : wallClockDate(date, "00:00").toLocaleDateString("en-GB", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-          });
 
   // Newest first. The occurrence key sorts in scheduled order.
   const loggedDoses = [...events].sort((a, b) =>
@@ -45,41 +41,24 @@ export function LogScreen({
   return (
     <CarerPage
       {...shell}
-      description="Review given and not-given doses with dates, times, and recorded reasons."
-      eyebrow="Care records"
+      description="Every dose that has been logged, newest first, with when it was due, when it was logged and who logged it."
+      eyebrow="What was logged"
       title="Medicine log"
     >
-      <section
-        aria-labelledby="full-log-heading"
-        className="overflow-hidden rounded-2xl border border-line bg-surface"
-      >
-        <div className="flex flex-col gap-3 border-b border-line p-5 sm:flex-row sm:items-center sm:justify-between">
-          <h2 id="full-log-heading" className="text-xl font-bold">
-            Recent dose activity
-          </h2>
-          <button
-            className="min-h-11 rounded-xl border-2 border-accent px-4 text-sm font-bold text-accent hover:bg-accent-subtle focus-visible:outline-3 focus-visible:outline-focus"
-            onClick={() => {
-              setToast("Medicine log prepared for export.");
-              window.setTimeout(() => setToast(""), 2800);
-            }}
-            type="button"
-          >
-            Export log
-          </button>
-        </div>
-        {loggedDoses.length === 0 && (
-          <p className="p-5 text-ink-muted">
-            No doses logged yet. Log a dose from the dashboard and it appears here.
-          </p>
-        )}
-        <ul className="divide-y divide-line">
+      {loggedDoses.length === 0 ? (
+        <p className="rounded-2xl border-2 border-dashed border-line-strong bg-surface p-6 text-base leading-7 text-ink-soft">
+          No doses logged yet. Log a dose as given or not given on the dashboard and it is
+          listed here.
+        </p>
+      ) : (
+        <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
           {loggedDoses.map((event) => {
             const medication = medicationById.get(event.medicationId);
             const given = event.outcome === "given";
             const loggedAt = new Date(event.recordedAt);
             const loggedOn = localDateOf(loggedAt);
             const loggedTime = clockParts(loggedAt.getHours(), loggedAt.getMinutes());
+            const gap = gapLabel(event);
             return (
               <li
                 className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center"
@@ -93,26 +72,28 @@ export function LogScreen({
                   <Icon name={given ? "check" : "close"} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-bold">
+                  <h2 className="text-base font-bold">
                     {medication ? `${medication.name} · ${medication.strength}` : "Medicine"}
+                  </h2>
+                  <p className="mt-1 text-base text-ink-muted">
+                    Due {dayLabel(event.date, now).toLowerCase()} at {formatTime(event.timeOfDay)}
                   </p>
-                  <p className="mt-1 text-sm text-ink-muted">
-                    Scheduled {dayLabel(event.date)}, {formatTime(event.timeOfDay)} · Logged{" "}
-                    {loggedOn === event.date ? "" : `${dayLabel(loggedOn)}, `}
-                    {loggedTime.clock} {loggedTime.period} by{" "}
-                    {event.recordedBy === "carer" ? carerName : patientName}
+                  <p className="mt-1 text-base text-ink-muted">
+                    Logged{" "}
+                    {loggedOn === event.date ? "" : `${dayLabel(loggedOn, now).toLowerCase()} `}
+                    at {loggedTime.clock} {loggedTime.period}
+                    {gap ? `, ${gap},` : ""} by{" "}
+                    {event.recordedBy === "carer" ? carerName || "the carer" : patientName || "the patient"}
                   </p>
                   {event.outcome === "not-given" && (
-                    <p className="mt-1 text-sm font-bold text-ink-soft">
-                      Reason: {reasonLabel(event.reason, patientName)}
+                    <p className="mt-1 text-base font-bold text-ink-soft">
+                      Reason: {reasonLabel(event.reason, patientName, carerName)}
                     </p>
                   )}
-                  {event.note && (
-                    <p className="mt-1 text-sm text-ink-soft">Note: {event.note}</p>
-                  )}
+                  {event.note && <p className="mt-1 text-base text-ink-soft">Note: {event.note}</p>}
                 </div>
                 <span
-                  className={`rounded-full px-3 py-2 text-sm font-bold ${
+                  className={`self-start rounded-full px-3 py-2 text-sm font-bold sm:self-center ${
                     given ? "bg-given-subtle text-given" : "bg-not-given-subtle text-not-given"
                   }`}
                 >
@@ -122,7 +103,7 @@ export function LogScreen({
             );
           })}
         </ul>
-      </section>
+      )}
     </CarerPage>
   );
 }
