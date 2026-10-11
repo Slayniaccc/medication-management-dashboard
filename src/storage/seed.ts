@@ -121,7 +121,7 @@ function seedDetails(now: Date): Details {
     consentMethod: "Confirmed directly by patient",
     consentDate: now.toISOString().slice(0, 10),
     allowMedicineChanges: false,
-    readAloud: true,
+    readAloud: false,
     patientTheme: "high-contrast",
     textSize: "large",
     colourSafe: true,

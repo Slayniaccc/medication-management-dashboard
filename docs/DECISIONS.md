@@ -439,3 +439,25 @@ The sideways strip was the one interaction that needed a drag. Reaching the last
 **Checked and left alone.** No component handles pointer, touch or drag events, and nothing uses a long press. The file, date and select fields open the platform's own pickers on a single tap. The resize handle on a text area is a drag, but it is optional and the field works at the size given. The number field's stepper arrows are small, and typing does the same job.
 
 **Not done here.** The sizes were read from the class strings and not measured in a browser, so nothing here confirms the rendered boxes at 200% zoom or at the larger text sizes. The gap between adjacent targets was not audited.
+
+---
+
+## 2026-10-11: Read aloud is off unless turned on, speaks only when pressed, and is offered in place of a screen reader
+
+**Decision.** `readAloud` defaults to false. In patient setup it is labelled "Read aloud button, in place of a screen reader" and its description says who it is for. When on, the patient view shows one button, "Read next medicine aloud", which becomes "Stop reading" while the voice is going. Nothing is ever spoken unasked, and speech is cancelled when the patient view is left. Where the browser has no speech synthesis the button is not shown and the setting says so.
+
+**Alternative.** Keep it on by default with a stop button. Or remove synthesised speech entirely and rely on real assistive technology.
+
+**Why.** A screen reader user already hears the page, and a second voice over the first is worse than silence. The app cannot detect a screen reader, so the only safe default is off, and the only honest framing is that this is for someone who does not use one: Asha with low vision and no screen reader set up is exactly that person, which is why it was not removed. The button changes its label rather than using `aria-pressed`, so there is one state to announce and not two. The old "not supported" toast was raised on a view that renders no toast, so it was never seen; not offering the button is the direction that message failed to give.
+
+**Not done here.** A database created before this change was seeded with the setting on and keeps it. Nothing has been listened to in a browser yet.
+
+---
+
+## 2026-10-11: Reduced motion is decided in the stylesheet only
+
+**Decision.** The glide to the top on a change of view is `scroll-behavior: smooth` on `html`, and `useNavigation` calls `scrollTo` without a behaviour. The `prefers-reduced-motion` media query and the `html[data-reduced-motion]` rule each turn off transitions, animations and that scroll, and each works without the other.
+
+**Alternative.** Keep passing `behavior: "smooth"` from script, chosen by the in-app setting, and add a `matchMedia` check beside it.
+
+**Why.** An explicit `behavior` passed to `scrollTo` overrides the stylesheet, so the scroll followed the in-app toggle and ignored the device's preference. A second check in script would have fixed that by keeping two sources in step by hand. With no behaviour passed, the stylesheet is the only place motion is decided and both sources are already there. The attribute rule also did not match `html` itself, only its descendants, and the root is where the window's scroll behaviour is read from. Every other moving thing in the app is a Tailwind `transition` utility, checked by searching for them: there are no keyframe animations and no other scroll calls.

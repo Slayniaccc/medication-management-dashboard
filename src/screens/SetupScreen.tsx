@@ -388,8 +388,10 @@ export function SetupScreen({
             <div className="mt-7">
               <ToggleRow
                 checked={readAloud}
-                description="Shows a control that reads medication instructions out loud."
-                label="Read aloud"
+                description={`For someone who does not use a screen reader. Adds a button to the patient view that speaks the next medicine in this device’s own voice, and only when it is pressed. A screen reader already reads the whole page, and two voices at once are harder to follow than one.${
+                  "speechSynthesis" in window ? "" : " This browser has no voice to read with."
+                }`}
+                label="Read aloud button, in place of a screen reader"
                 onChange={() => setReadAloud((value) => !value)}
               />
               <ToggleRow

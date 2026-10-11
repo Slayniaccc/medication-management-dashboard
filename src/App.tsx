@@ -82,8 +82,8 @@ export default function App({
     todaysRows,
   } = useRoutine({ flashToast, initial, now, onSaveFailed, repository });
   const { goTo, isNavActive, screen, setScreen } = useNavigation({
+    initialScreen: "dashboard",
     onViewChange,
-    reducedMotion: details.reducedMotion,
   });
   const {
     medicineImage,
@@ -101,11 +101,11 @@ export default function App({
   const { reason, reasonFor, saveNotGiven, setReason, setReasonFor } = useNotGivenReason({
     markNotGiven,
   });
-  const readPatientPage = useReadAloud({
+  const readAloud = useReadAloud({
+    hasMedicines: activeMedications.length > 0,
     nextDose,
     nextMedication,
     patientName: details.patientName,
-    setToast,
   });
 
   const shell: CarerPageShell = {
@@ -230,7 +230,7 @@ export default function App({
         medicationById={medicationById}
         nextDose={nextDose}
         nextMedication={nextMedication}
-        readPatientPage={readPatientPage}
+        readAloud={readAloud}
         setReasonFor={setReasonFor}
         setScreen={setScreen}
         setShowAddPrescription={setShowAddPrescription}

@@ -18,7 +18,7 @@ export function PatientScreen({
   medicationById,
   nextDose,
   nextMedication,
-  readPatientPage,
+  readAloud,
   setReasonFor,
   setScreen,
   setShowAddPrescription,
@@ -31,7 +31,7 @@ export function PatientScreen({
   medicationById: Map<string, Medication>;
   nextDose: Occurrence | null;
   nextMedication: Medication | null;
-  readPatientPage: () => void;
+  readAloud: { speaking: boolean; start: () => void; stop: () => void; supported: boolean };
   setReasonFor: (value: { dose: OccurrenceKey; recordedBy: RecordedBy } | null) => void;
   setScreen: (screen: Screen) => void;
   setShowAddPrescription: (show: boolean) => void;
@@ -43,7 +43,7 @@ export function PatientScreen({
     colourSafe,
     patientName,
     patientTheme,
-    readAloud,
+    readAloud: readAloudOn,
     reducedMotion,
     simplifiedLayout,
     textSize,
@@ -76,13 +76,15 @@ export function PatientScreen({
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {readAloud && (
+            {/* Only when the carer has turned it on, and never speaking unasked:
+                a voice nobody started would talk over a screen reader. */}
+            {readAloudOn && readAloud.supported && (
               <button
                 className="min-h-12 rounded-xl border-2 border-accent px-4 font-bold text-accent focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                onClick={readPatientPage}
+                onClick={readAloud.speaking ? readAloud.stop : readAloud.start}
                 type="button"
               >
-                Read page aloud
+                {readAloud.speaking ? "Stop reading" : "Read next medicine aloud"}
               </button>
             )}
             <button

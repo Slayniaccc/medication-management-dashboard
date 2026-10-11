@@ -207,6 +207,9 @@
   html {
     font-family: var(--font-sans);
     background: var(--color-page);
+    /* The glide back to the top on a change of view. Both reduced motion
+       rules at the foot of this file turn it off. */
+    scroll-behavior: smooth;
   }
 
   body {
@@ -247,22 +250,35 @@
   }
 }
 
+/*
+ * Reduced motion has two sources and each stands alone: the device's own
+ * preference, and the in-app setting. Neither is read by script. Every
+ * transition in the app is a Tailwind `transition` utility and the one scroll
+ * is html's scroll-behavior above, so these two rules cover all of them. The
+ * selectors include the root element itself, because that is where the
+ * window's scroll behaviour is read from.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
   }
 }
 
+html[data-reduced-motion],
 html[data-reduced-motion] *,
 html[data-reduced-motion] *::before,
 html[data-reduced-motion] *::after {
   scroll-behavior: auto !important;
   transition-duration: 0.01ms !important;
+  transition-delay: 0s !important;
   animation-duration: 0.01ms !important;
+  animation-delay: 0s !important;
   animation-iteration-count: 1 !important;
 }

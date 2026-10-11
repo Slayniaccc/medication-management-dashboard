@@ -183,7 +183,7 @@ export function ProfileScreen({
                 {[
                   `Theme: ${patientTheme.replace("-", " ")}`,
                   `Text size: ${textSize.replace("-", " ")}`,
-                  `Read aloud: ${readAloud ? "enabled" : "disabled"}`,
+                  `Read aloud button: ${readAloud ? "on" : "off"}`,
                   `Colour-safe labels: ${colourSafe ? "enabled" : "disabled"}`,
                   `Simplified layout: ${simplifiedLayout ? "enabled" : "disabled"}`,
                   `Reduced motion: ${reducedMotion ? "enabled" : "disabled"}`,

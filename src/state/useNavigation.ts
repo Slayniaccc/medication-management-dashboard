@@ -13,13 +13,13 @@ const screenByTarget: Record<string, Screen> = {
 };
 
 export function useNavigation({
+  initialScreen,
   onViewChange,
-  reducedMotion,
 }: {
+  initialScreen: Screen;
   onViewChange: (name: string) => void;
-  reducedMotion: boolean;
 }) {
-  const [screen, setScreen] = useState<Screen>("dashboard");
+  const [screen, setScreen] = useState<Screen>(initialScreen);
 
   // Views are swapped rather than navigated to, so nothing tells a screen
   // reader that the page changed. Focus goes to the new heading and the name is
@@ -35,7 +35,9 @@ export function useNavigation({
 
   const goTo = (target: string) => {
     setScreen(screenByTarget[target] ?? "dashboard");
-    window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+    // No behaviour is passed, so the stylesheet decides whether this glides or
+    // jumps. That is where both reduced motion rules live.
+    window.scrollTo({ top: 0 });
   };
 
   const isNavActive = (target: string) => screenByTarget[target] === screen;
