@@ -6,6 +6,8 @@ A medication notebook for a carer and the person they support. It lists each day
 
 It is a notebook, not a clinician. It records what you enter and shows it back. It never gives medical advice.
 
+![The carer dashboard with the example loaded: a greeting for Meera, the next dose to log, and today's doses each with a Given and a Not given button.](docs/screenshots/dashboard.png)
+
 ## At a glance
 
 |                |                                                                                                       |
@@ -50,6 +52,22 @@ The scope is deliberately narrow. One moment in a carer's day handled completely
 - **Prescriptions** added from what the carer types. Removing one asks first, keeps everything already logged, and can be undone from a list of removed prescriptions.
 - **A patient view** for Asha with its own theme (light, high contrast, dark), text size, simplified layout, colours that do not rely on red and green, and an optional read aloud button. It can be read-only, or she can log her own doses in her own words.
 - **First run and an example.** A new device starts empty and asks for two names. There is also a made-up week to look around in, which is labelled as an example on every carer page and can be cleared.
+
+### What it looks like
+
+The medicine log keeps the time each dose was due beside the time it was logged, and who logged it.
+
+![The medicine log, newest first. Each entry shows the medicine, when it was due, when it was logged and by whom, and whether it was given.](docs/screenshots/medicine-log.png)
+
+A dose that was not given always has a reason, chosen from seven.
+
+![The dialog asking why a dose was not given, naming the medicine and the time, with seven reasons to choose from.](docs/screenshots/reason-dialog.png)
+
+The patient view on a phone, in the high contrast theme. The carer's note is shown as hers, not as an instruction from the app.
+
+<img src="docs/screenshots/patient-view-high-contrast.png" width="320" alt="The patient view in high contrast on a phone: a greeting for Asha, her next medicine with Meera's note, and two large buttons reading I have taken it and I did not take it.">
+
+The screenshots show the made-up example week.
 
 ### Trying it
 
