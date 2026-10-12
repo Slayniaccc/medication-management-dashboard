@@ -57,7 +57,7 @@ The scope is deliberately narrow. One moment in a carer's day handled completely
 
 The medicine log keeps the time each dose was due beside the time it was logged, and who logged it.
 
-![The medicine log, newest first. Each entry shows the medicine, when it was due, when it was logged and by whom, and whether it was given.](docs/screenshots/medicine-log.png)
+![The medicine log, newest first. Each entry shows the medicine, when it was due, when it was logged and by whom. Most were given. One was not given, logged by Asha, with the reason: Asha did not want to take it.](docs/screenshots/medicine-log.png)
 
 A dose that was not given always has a reason, chosen from seven.
 
