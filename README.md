@@ -103,15 +103,40 @@ Each of those is covered by a test in `src/model/doses.test.ts`. The model is pl
 
 ## Accessibility
 
-Accessibility is the point of the project, and the parts of it that can be checked by a machine are part of the gate:
+Accessibility is the point of the project, not a layer added at the end. Asha has low vision, reduced grip strength and limited fine motor control, and Meera is usually tired and in a hurry, so the same decisions serve both of them.
+
+### What can be changed
+
+Meera sets these up for Asha in patient setup, and each one changes what is actually drawn:
+
+- **Theme**: light, high contrast or dark, applied to the patient view.
+- **Text size**: standard, large or extra large, scaling the whole type scale together.
+- **Colours that do not rely on red and green**: taken and not taken are shown in blue and orange. An icon and the words are always shown as well, so colour is never the only signal.
+- **Simplified patient view**: shows the next medicine and how to reach the carer, and leaves out the rest of the day's list.
+- **Reduce motion**: stops the sliding and fading between states on every page. A device already set to reduce motion is followed whatever the app is set to.
+- **Read aloud button**: for someone who does not use a screen reader. It speaks the next medicine only when pressed and can be stopped. It is off by default and offered in place of a screen reader, because two voices at once are harder to follow than one.
+
+### What is built in for everyone
+
+- **Large targets.** Every control is at least 44 by 44 CSS pixels, which is the project's floor rather than WCAG's 24.
+- **One tap, one hand.** Nothing needs a drag, a pinch, a long press or two hands. The phone menu wraps onto more rows instead of scrolling sideways.
+- **Keyboard throughout.** Controls are native buttons, links and form fields, each with a visible focus ring. There is a skip link to the main content.
+- **Changes of view are announced.** The app swaps views without loading a page, so focus moves to the new view's heading, a polite live region says its name, and the page title changes.
+- **Structure a screen reader can navigate.** Every view has one `main` and one `h1`, and the navigation is a labelled landmark. On a phone it sits behind a Menu button that reports whether it is open.
+- **Native modal dialogs.** The browser moves focus in, keeps it there, closes on Escape and returns focus afterwards.
+- **Forms that say what is wrong.** No save button is ever disabled. A failed check puts a message under each field at fault, ties it to the field, announces it and moves focus to the first.
+- **Words chosen for the reader.** The patient view says "I have taken it" where the carer's says "Given". Buttons that would otherwise sound identical carry the medicine and the time in their accessible name.
+- **A typeface made for low vision.** Text is set in Atkinson Hyperlegible, falling back to the system font offline.
+- **Nothing lost to a mis-tap.** Logging the same dose twice cannot create a duplicate, and removing a prescription asks first and can be undone.
+
+### How it is checked
+
+The parts that can be checked by a machine are part of the gate, and run on every push:
 
 - `src/accessibility.test.tsx` renders every view, dialog and failed form, with the example loaded and with nothing entered, and runs axe-core on each.
 - `src/contrast.test.ts` checks every text, border and focus ring colour pairing in all three themes, with colour-safe mode on and off: 4.5:1 for text at any size, 3:1 for the rest.
-- Every control is at least 44 by 44 CSS pixels, which is the project's floor rather than WCAG's 24, because Asha has reduced grip strength. Nothing needs a drag, a pinch, a long press or two hands.
-- A change of view moves focus to the new heading and is announced. Dialogs are native modal dialogs. Form errors are announced, tied to their field, and focus moves to the first.
-- Each accessibility setting resolves to an attribute or design token the stylesheet reads. Colours are stored as semantic tokens, never as hex values, so high contrast mode can recolour everything.
-- Read aloud is off unless switched on, speaks only when its button is pressed, and is offered in place of a screen reader, not on top of one.
-- Reduced motion follows the device setting and the in-app setting independently, both in CSS.
+- `src/motion.test.ts` holds reduced motion in the stylesheet, where the device setting and the in-app setting each work independently.
+- Each setting resolves to an attribute or design token the stylesheet reads. Colours are stored as semantic tokens, never as hex values, so high contrast mode can recolour everything.
 
 **What has not been done.** A clean automated run is not conformance. The app has not yet had a keyboard-only pass, a screen reader pass with VoiceOver or NVDA, or a check at 200% zoom in a real browser. Those are the next piece of work, and until they are written up in `docs/accessibility/` nothing here is evidence that Asha can use it.
 
