@@ -2,7 +2,30 @@
 
 A medication notebook for a carer and the person they support. It lists each day's doses, lets either of them log what happened to each one, and keeps that log on the device.
 
+**[Open the live app](https://slayniaccc.github.io/medication-management-dashboard/)** and choose "Load the example" to see a week of made-up data. Nothing you enter leaves your browser.
+
 It is a notebook, not a clinician. It records what you enter and shows it back. It never gives medical advice.
+
+## At a glance
+
+|                |                                                                                                       |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| **What it is** | A local-first web app for logging medication doses, built for two users with very different needs     |
+| **Built with** | React 19, TypeScript, Vite, Tailwind CSS v4, IndexedDB, Vitest, axe-core                              |
+| **Runs on**    | Any modern browser. No account, no server, two runtime dependencies (`react` and `react-dom`)         |
+| **Tested by**  | Over 240 tests in the gate: the dose model, colour contrast in every theme, and axe-core on each view |
+| **Origin**     | A team hackathon prototype for CodeForAll 2026, rebuilt solo into something that works                |
+| **Status**     | Working and deployed. Manual screen reader and keyboard passes are still to do, and it says so below  |
+
+## What this project shows
+
+If you are reading this as a piece of work rather than as a user, these are the parts worth looking at.
+
+- **A data model designed from the problem, not from the UI.** The prototype stored a `status` on each medication, so it had no concept of tomorrow. The rebuild separates definition, intent and event, derives everything that can be derived, and never stores "pending". See [How the data works](#how-the-data-works) and `src/model/`.
+- **Accessibility as a tested property.** Contrast ratios are a unit test over the design tokens in three themes. Every view, dialog and failed form is rendered and run through axe-core on every push. The 44 pixel target floor, the focus handling and the reduced motion rules are all written down as invariants and checked.
+- **A product boundary held on purpose.** The app does not advise, warn or interpret, and the README explains where that line sits and why. Features the prototype only pretended to have were deleted rather than left in for show.
+- **Decisions written down as they were made.** [`docs/DECISIONS.md`](docs/DECISIONS.md) holds more than fifty entries, each with the alternative that was rejected and the reason.
+- **An honest inventory.** [`AGENTS.md`](AGENTS.md) lists what is unfinished and what has not been verified, in the same detail as what is done.
 
 ## The problem
 
@@ -17,14 +40,24 @@ Both of them use the app, and they need different things from it:
 
 A change that helps one at the other's expense is a regression.
 
+The scope is deliberately narrow. One moment in a carer's day handled completely is worth more than five handled partially, so this is not a general health platform and is not trying to become one.
+
 ## What is built
 
 - **Today's doses**, in time order, each logged as given or not given in one press. Due soon and overdue are worked out from the clock and shown to the carer only.
-- **A reason for every dose not given**, chosen from seven and stored with the dose: did not want it, asleep, unwell, not available, withheld on clinical advice, carer not able, other. These are different facts and are kept apart.
+- **A reason for every dose not given**, chosen from seven and stored with the dose: did not want it, asleep, unwell, not available, withheld on clinical advice, carer not able, other. These are different facts and are kept apart. Asha declining a dose is her choice, a dose withheld on advice is a correct action, and a carer who could not manage it is a signal about the carer.
 - **A medicine log** showing when each dose was due, when it was logged and by whom. The gap between those two times is kept, because 8:05 for an 8:00 dose and 11pm for the same dose are different days.
 - **Prescriptions** added from what the carer types. Removing one asks first, keeps everything already logged, and can be undone from a list of removed prescriptions.
 - **A patient view** for Asha with its own theme (light, high contrast, dark), text size, simplified layout, colours that do not rely on red and green, and an optional read aloud button. It can be read-only, or she can log her own doses in her own words.
 - **First run and an example.** A new device starts empty and asks for two names. There is also a made-up week to look around in, which is labelled as an example on every carer page and can be cleared.
+
+### Trying it
+
+1. Open the [live app](https://slayniaccc.github.io/medication-management-dashboard/) and choose **Load the example**.
+2. On the dashboard, log one of today's doses as given, and another as not given with a reason.
+3. Open **Medicine log** to see both, with the time each was due, the time it was logged and who logged it. The example week includes a dose logged four hours late and a reminder time that changed mid-week.
+4. Open the **patient view** and change the theme and text size in patient setup to see Asha's side of it.
+5. Refresh the page. Everything is still there.
 
 ## What is deliberately not built
 
@@ -43,12 +76,12 @@ This began as a rule of the hackathon brief and is kept as a product decision. A
 The reasoning is in [`docs/DECISIONS.md`](docs/DECISIONS.md). The short version:
 
 - A **medication** is a definition, a **schedule** is intent over a date range, and a **dose event** is a record of something that happened. The prototype had all three on one object with a status field, which is why it had no concept of tomorrow.
-- A dose event is stored **only when a dose is acted on**. Pending, due soon and overdue are never stored. They are worked out from the schedule and the clock, so nothing can drift out of date.
+- A dose event is stored **only when a dose is acted on**. Pending, due soon and overdue are never stored. They are worked out from the schedule and the clock, so nothing can drift out of date and no background job has to keep rows up to date.
 - An event is keyed by **medicine, local date and time slot**. Logging the same dose twice lands on the same record, so a mis-tap cannot create a duplicate.
 - A schedule is **never edited**. To change a time, the old schedule is ended and a new one begins, so past days still resolve through the schedule that was in force and logged doses keep their place.
 - A schedule's time is **wall clock** and an event's timestamp is an **instant**. An 8:00 dose stays at 8:00 when the clocks change.
 
-Each of those is covered by a test in `src/model/doses.test.ts`.
+Each of those is covered by a test in `src/model/doses.test.ts`. The model is plain types and pure functions with no React in it, so it is tested without rendering anything.
 
 ## Accessibility
 
@@ -56,12 +89,42 @@ Accessibility is the point of the project, and the parts of it that can be check
 
 - `src/accessibility.test.tsx` renders every view, dialog and failed form, with the example loaded and with nothing entered, and runs axe-core on each.
 - `src/contrast.test.ts` checks every text, border and focus ring colour pairing in all three themes, with colour-safe mode on and off: 4.5:1 for text at any size, 3:1 for the rest.
-- Every control is at least 44 by 44 CSS pixels, which is the project's floor rather than WCAG's 24. Nothing needs a drag, a pinch, a long press or two hands.
+- Every control is at least 44 by 44 CSS pixels, which is the project's floor rather than WCAG's 24, because Asha has reduced grip strength. Nothing needs a drag, a pinch, a long press or two hands.
 - A change of view moves focus to the new heading and is announced. Dialogs are native modal dialogs. Form errors are announced, tied to their field, and focus moves to the first.
+- Each accessibility setting resolves to an attribute or design token the stylesheet reads. Colours are stored as semantic tokens, never as hex values, so high contrast mode can recolour everything.
 - Read aloud is off unless switched on, speaks only when its button is pressed, and is offered in place of a screen reader, not on top of one.
 - Reduced motion follows the device setting and the in-app setting independently, both in CSS.
 
-**What has not been done.** A clean automated run is not conformance. The app has not yet had a keyboard-only pass, a screen reader pass with VoiceOver or NVDA, or a check at 200% zoom in a real browser. Those are the next piece of work, and until they are written up in `docs/accessibility/` nothing here is evidence that Asha can use it. The full list of what is known to be unfinished is in [`AGENTS.md`](AGENTS.md) under Current state and Known issues.
+**What has not been done.** A clean automated run is not conformance. The app has not yet had a keyboard-only pass, a screen reader pass with VoiceOver or NVDA, or a check at 200% zoom in a real browser. Those are the next piece of work, and until they are written up in `docs/accessibility/` nothing here is evidence that Asha can use it.
+
+## From prototype to product
+
+AccessCare began as a team entry for CodeForAll 2026, Track 5, organised by Eli Lilly and Company. The first commit in this repository is the hackathon build exactly as the team delivered it. Everything after it is solo work.
+
+|                   | Hackathon build                               | Now                                                            |
+| ----------------- | --------------------------------------------- | -------------------------------------------------------------- |
+| **Structure**     | One `App.tsx` exported from Figma Make        | Model, storage, state hooks, screens and components, separated |
+| **Data**          | A medication with a `status` field            | Medications, schedules and dose events, with derived state     |
+| **Persistence**   | None. Refreshing reset everything             | IndexedDB behind a repository interface                        |
+| **Tests**         | None                                          | Over 240, run with a typecheck and a build on every push       |
+| **Controls**      | Several showed a message and did nothing      | Every control does what it says, or was removed                |
+| **Accessibility** | Settings on a screen, with nothing checked    | Contrast, axe-core and reduced motion checked on every push    |
+
+```
+git diff $(git rev-list --max-parents=0 HEAD)..main
+```
+
+is the full record of what changed.
+
+## Known limits and what is next
+
+The complete list is in [`AGENTS.md`](AGENTS.md) under Current state and Known issues. The ones that matter most:
+
+- The manual accessibility passes described above have not been done.
+- A logged dose cannot be corrected or undone. Whether a correction overwrites the event or is appended to it is an open decision, and it is recorded as open rather than guessed at.
+- A prescription cannot be edited, and reminder times are limited to four fixed options.
+- Data lives in one browser on one device. Two people cannot share a log.
+- The browser may clear stored data under storage pressure, because the app does not yet ask for persistent storage.
 
 ## Running it
 
@@ -80,13 +143,9 @@ On first open, either enter two names or choose "Load the example" to see a week
 
 ## Deploying
 
-The app is a static site. `.github/workflows/deploy.yml` publishes it to GitHub Pages on every push to `main`, after running the full gate.
+The app is a static site. `.github/workflows/deploy.yml` publishes it to GitHub Pages on every push to `main`, after running the full gate, so nothing that fails a test is ever published. `check.yml` runs the same gate on pull requests.
 
-One-time setup: in the repository on GitHub, open **Settings → Pages** and set **Source** to **GitHub Actions**. After the next push to `main` (or a manual run of the workflow from the Actions tab), the site is at:
-
-```
-https://<your-username>.github.io/medication-management-dashboard/
-```
+In a fork, set **Settings → Pages → Source** to **GitHub Actions** once. Left on "Deploy from a branch", GitHub also publishes the unbuilt repository root, and whichever finishes last is what visitors get.
 
 A project site is served from a sub-path, so the workflow sets `BASE_PATH` to `/<repository-name>/` and `vite.config.ts` uses it as Vite's `base`. To build for a sub-path by hand, set the same variable:
 
@@ -97,16 +156,6 @@ BASE_PATH=/medication-management-dashboard/ pnpm build
 Leave it unset for a host that serves the app from the root.
 
 Data is stored per browser and per site address, so the deployed copy and a local copy do not share anything.
-
-## Where it came from
-
-AccessCare began as a team entry for CodeForAll 2026, Track 5, organised by Eli Lilly and Company. The first commit in this repository is the hackathon build exactly as the team delivered it. Everything after it is solo work, taking a prototype that demonstrated and making it into something that works.
-
-```
-git diff $(git rev-list --max-parents=0 HEAD)..main
-```
-
-is the record of what changed since.
 
 ## Repository map
 
