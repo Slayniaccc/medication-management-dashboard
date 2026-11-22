@@ -285,6 +285,33 @@ describe("a change of view", () => {
   });
 });
 
+describe("a dialog the browser closes by itself", () => {
+  // What the browser does when it closes a dialog with no cancel to stop it:
+  // the dialog shuts and a close event follows.
+  const closeAsTheBrowserWould = (dialog: HTMLDialogElement) =>
+    act(() => {
+      dialog.close();
+      dialog.dispatchEvent(new Event("close"));
+    });
+
+  it("can be opened again, because the state that renders it was told", async () => {
+    await render(exampleSnapshot(now));
+    await press("Add prescription");
+    closeAsTheBrowserWould(document.querySelector("dialog[open]") as HTMLDialogElement);
+    expect(document.querySelector("dialog")).toBeNull();
+    await press("Add prescription");
+    expect(document.querySelector("dialog[open]")).not.toBeNull();
+  });
+
+  it("stays open when a close event arrives after it was opened again", async () => {
+    await render(exampleSnapshot(now));
+    await press("Add prescription");
+    const dialog = document.querySelector("dialog[open]") as HTMLDialogElement;
+    act(() => dialog.dispatchEvent(new Event("close")));
+    expect(document.querySelector("dialog[open]")).toBe(dialog);
+  });
+});
+
 describe("focus is never dropped by the action that was just taken", () => {
   it("goes to the outcome when a dose is logged as given", async () => {
     await render(exampleSnapshot(now));
