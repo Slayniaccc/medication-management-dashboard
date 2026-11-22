@@ -8,8 +8,9 @@ const panelClass = {
 };
 
 // A native modal dialog. Opening it with showModal is what moves focus inside,
-// keeps Tab from leaving, makes the page behind inert, closes on Escape and
-// puts focus back where it was. None of that is written by hand here.
+// keeps Tab from leaving, makes the page behind inert and puts focus back where
+// it was. Escape and every other way of closing go through onClose, so the
+// state that renders the dialog is the one place that decides.
 export function Dialog({
   children,
   closeLabel,
@@ -45,6 +46,14 @@ export function Dialog({
       onCancel={(event) => {
         event.preventDefault();
         onClose();
+      }}
+      // The browser can also close it without a cancel that can be stopped
+      // (for example dialog.close(), or a close the platform forces). Tell the
+      // state so it is not left saying open. The close event is queued, so in
+      // StrictMode the one from the effect's cleanup arrives after showModal
+      // has reopened it; a dialog that is open again has not been closed.
+      onClose={(event) => {
+        if (!event.currentTarget.open) onClose();
       }}
       ref={dialog}
     >
